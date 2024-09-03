@@ -1,0 +1,19 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+
+<div class="text-center">
+    <h2>Welcome to the Volunteer Management System!</h2>
+    
+    <body>
+        This volunteer management system was created by the UNF Digital Talons Team to showcase our programming skills for the IS Senior Project.
+        It is supposed to be a web-based application that allows a nonprofit organization to collect volunteers’ information, track their participation in activities, and produce reports on their contributions.
+    </body>
+    <br/>
+    <div class="container" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px;">
+        <a class="btn btn-danger text-white btn-sm" asp-controller="Account" asp-action="AccountCreation">Account Registration</a>
+        <a class="btn btn-danger text-white btn-sm" asp-controller="Volunteers" asp-action="Index">Volunteers</a>
+        <a class="btn btn-danger text-white btn-sm" asp-controller="volunteerOppurtunities" asp-action="Index">Volunteer Oppurtunities</a>
+    </div>
+</div>

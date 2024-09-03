@@ -1,0 +1,28 @@
+﻿@model VolunteerManagementSystem.Models.VolunteerOppurtunity
+
+@{
+    ViewData["Title"] = "Volunteer Oppurtunity Details";
+}
+
+<h2>Details</h2>
+
+<div>
+    <h4>Volunteer Oppurtunity</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>Title</dt>
+        <dd>@Model.Title</dd>
+
+        <dt>Date</dt>
+        <dd>@Model.Date</dd>
+
+        <dt>Organizer</dt>
+        <dd>@Model.Organizer</dd>
+
+        <dt>Phone Contact</dt>
+        <dd>@Model.PhoneContact</dd>
+
+    </dl>
+</div>
+<a asp-action="Edit" asp-route-id="@Model.VolunteerOppurtunityId" class="btn btn-primary">Edit</a>
+<a asp-action="Index" class="btn btn-default">Back to List</a>
