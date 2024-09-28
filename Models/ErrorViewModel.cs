@@ -1,4 +1,4 @@
-namespace VolunteerManagementSystem.Models
+namespace FirstIterationProductRelease.Models
 {
     public class ErrorViewModel
     {

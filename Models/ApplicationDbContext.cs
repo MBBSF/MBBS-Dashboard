@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using VolunteerManagementSystem.Models;
+using FirstIterationProductRelease.Models;
 
-namespace VolunteerManagementSystem.Models
+namespace FirstIterationProductRelease.Models
 {
     public class ApplicationDbContext : DbContext
     {
@@ -10,9 +10,7 @@ namespace VolunteerManagementSystem.Models
         { }
         public DbSet<Account> Accounts { get; set; }
 
-        public DbSet<Volunteer> Volunteers { get; set; }
-
-        public DbSet<VolunteerOppurtunity> volunteerOppurtunities { get; set; }
+        
 
     }
 }

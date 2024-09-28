@@ -1,5 +1,5 @@
 ﻿
-namespace VolunteerManagementSystem.Models
+namespace FirstIterationProductRelease.Models
 {
     public interface IAccountRepository
     {

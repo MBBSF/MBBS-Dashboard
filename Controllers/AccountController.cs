@@ -1,7 +1,7 @@
-﻿using VolunteerManagementSystem.Models;
+﻿using FirstIterationProductRelease.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace VolunteerManagementSystem.Controllers
+namespace FirstIterationProductRelease.Controllers
 {
     public class AccountController : Controller
     {
@@ -36,16 +36,6 @@ namespace VolunteerManagementSystem.Controllers
             return null;
         }
 
-        public Account GetAccountByReferal(string referal) {
-            foreach (Account acc in AccountRepository.Accounts) {
-                if (acc.ReferalCode == referal) {
-                    Console.WriteLine("Found account by referal");
-                    return acc;
-                }
-            }
-            Console.WriteLine("Failed to find account by referal");
-            return null;
-        }
 
 
         public ViewResult AccountList() {
@@ -95,7 +85,6 @@ namespace VolunteerManagementSystem.Controllers
         {
             if (!ModelState.IsValid) return View("AccountCreation");
             Random rand = new Random(System.DateTime.Now.Millisecond);
-            acc.ReferalCode = rand.Next(100000000, 999999999).ToString();
             AccountRepository.SaveAccount(acc);
             return View("AccountList", AccountRepository.Accounts);
         }

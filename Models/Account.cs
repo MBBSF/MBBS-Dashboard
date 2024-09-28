@@ -1,4 +1,4 @@
-﻿namespace VolunteerManagementSystem.Models
+﻿namespace FirstIterationProductRelease.Models
 {
     public class Account
     {
@@ -11,14 +11,6 @@
 
         public string Email { get; set; }
 
-        public string cardNumber { get; set; }
-        public int cvc { get; set; }
-        public string expirationDate { get; set; }
-
-
-        public string? ReferalCode { get; set; }
-        public string? AppliedReferal { get; set; }
-
-        public double CreditedFunds { get; set; }
+       
     }
 }

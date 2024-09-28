@@ -20,13 +20,4 @@
     <Folder Include="Views\Home\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="Views\VolunteerOppurtunities\Create.cshtml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Update="Views\Volunteers\Create.cshtml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
 </Project>

@@ -1,8 +1,8 @@
-﻿using VolunteerManagementSystem.Models;
+﻿using FirstIterationProductRelease.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
-namespace VolunteerManagementSystem.Controllers
+namespace FirstIterationProductRelease.Controllers
 {
     public class HomeController : Controller
     {

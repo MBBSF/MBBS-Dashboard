@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace VolunteerManagementSystem.Migrations
+namespace FirstIterationProductRelease.Migrations
 {
     /// <inheritdoc />
     public partial class V3 : Migration

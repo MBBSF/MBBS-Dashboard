@@ -1,5 +1,5 @@
-@using VolunteerManagementSystem.Models
-@using VolunteerManagementSystem.Controllers
+@using FirstIterationProductRelease.Models
+@using FirstIterationProductRelease.Controllers
 <!DOCTYPE html>
 @{
     Account acc = AccountController.ActiveAccount;
@@ -10,17 +10,18 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Volunteer Management System</title>
+    <title>@ViewData["Title"] - M.B.B.S.F Metrics Dashboard</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/KiwiCorpSite.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/FirstIterationProductRelease.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark custom-navbar-color border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index" style="color: blue; font-weight: bold; text-shadow: 1px 1px 1px #000000;">
-                    Volunteer Management System
+                <a class="navbar-brand dashboard-title" asp-area="" asp-controller="Home" asp-action="Index" style="color: white; text-shadow: 1px 1px 1px #000000;">
+                    <img src="~/images/mbbsf-logo.png" alt="MBBSF Logo" class="navbar-logo">
+                    M.B.B.S.F Metrics Dashboard
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -29,10 +30,10 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-white" asp-area="" asp-controller="Home" asp-action="Index">HOME</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="LogInPage">@name</a>
+                            <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="LogInPage">LOG IN</a>
                         </li>
                     </ul>
                 </div>
@@ -47,7 +48,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2024 - UNF Digital Talons 
+            &copy; 2024 - Marie Barney Boston Scholarship Foundation
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

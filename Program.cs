@@ -1,6 +1,5 @@
-using VolunteerManagementSystem.Models;
+using FirstIterationProductRelease.Models;
 using Microsoft.EntityFrameworkCore;
-using VolunteerManagementSystem.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,8 +11,7 @@ options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectio
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddTransient<IAccountRepository, EFAccountRepository>();
-builder.Services.AddTransient<IVolunteerRepository, EFVolunteerRepository>();
-builder.Services.AddTransient<IVolunteerOppurtunityRepository, EFVolunteerOppurtunityRepository>();
+
 
 var app = builder.Build();
 

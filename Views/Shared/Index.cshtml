@@ -4,16 +4,20 @@
 
 
 <div class="text-center">
-    <h2>Welcome to the Volunteer Management System!</h2>
+    <h2>Welcome to the Marie Barney Boston Scholarship Foundation's Metrics Dashboard</h2>
     
     <body>
-        This volunteer management system was created by the UNF Digital Talons Team to showcase our programming skills for the IS Senior Project.
-        It is supposed to be a web-based application that allows a nonprofit organization to collect volunteers’ information, track their participation in activities, and produce reports on their contributions.
+        <p>
+        The Marie Barney Boston Scholarship Foundation (MBBSF) is dedicated to enhancing educational opportunities for disadvantaged youth by providing scholarships and resources to facilitate access to higher education. Established under the guidance of Dr. Brenda Boston-Hudson in honor of her mother, Dr. Marie Barney Boston, the foundation aims to empower students from underserved communities through educational support, leadership development, and community engagement. By focusing on closing knowledge gaps and promoting college attendance, MBBSF seeks to increase the number of professionals and doctoral candidates from diverse backgrounds, ultimately fostering positive change within communities and encouraging future generations to pursue academic and leadership excellence.
+        </p>
+        <p>
+            This website is a web-based dashboard that will streamline data organization and access
+            for the Marie Barney Boston Scholarship Foundation. It will integrate with their current software and database
+            systems.
+        </p>
     </body>
     <br/>
-    <div class="container" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px;">
-        <a class="btn btn-danger text-white btn-sm" asp-controller="Account" asp-action="AccountCreation">Account Registration</a>
-        <a class="btn btn-danger text-white btn-sm" asp-controller="Volunteers" asp-action="Index">Volunteers</a>
-        <a class="btn btn-danger text-white btn-sm" asp-controller="volunteerOppurtunities" asp-action="Index">Volunteer Oppurtunities</a>
+    <div class="container button-container">
+        <a class="btn btn-primary text-white btn-sm" asp-controller="Account" asp-action="AccountCreation">Account Registration</a>
     </div>
 </div>
