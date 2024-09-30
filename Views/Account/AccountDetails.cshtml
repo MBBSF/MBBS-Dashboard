@@ -16,3 +16,12 @@
         <dd>@Model.ScholarshipStatus</dd>
     </dl>
 </div>
+
+<a class="btn btn-primary text-white btn-sm" asp-controller="Home" asp-action="Index" style="margin-top: 20px;">Back to Home</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

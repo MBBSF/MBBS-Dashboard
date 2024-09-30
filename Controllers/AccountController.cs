@@ -36,7 +36,7 @@ namespace FirstIterationProductRelease.Controllers
             return null;
         }
 
-        public ActionResult Details()
+        public ActionResult AccountDetails()
         {
             // simulates data fetching from database
             var accountDetail = new Account
