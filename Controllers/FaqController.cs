@@ -4,18 +4,13 @@ using System.Diagnostics;
 
 namespace FirstIterationProductRelease.Controllers
 {
-    public class HomeController : Controller
+    public class FaqController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ILogger<FaqController> _logger;
 
-        public HomeController(ILogger<HomeController> logger)
+        public FaqController(ILogger<FaqController> logger)
         {
             _logger = logger;
-        }
-
-        public IActionResult FAQ()
-        {
-            return View();
         }
 
         public IActionResult Index()
@@ -32,6 +27,11 @@ namespace FirstIterationProductRelease.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        public ViewResult Faq()
+        {
+            return View();
         }
     }
 }
