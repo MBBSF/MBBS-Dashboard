@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
+//test
+
 namespace FirstIterationProductRelease.Controllers
 {
     public class FaqController : Controller
