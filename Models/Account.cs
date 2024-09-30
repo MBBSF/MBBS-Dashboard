@@ -11,6 +11,7 @@
         
         public string Email { get; set; }
 
-       
+        public string ScholarshipStatus { get; set; }
+
     }
 }

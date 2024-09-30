@@ -1,0 +1,18 @@
+﻿@model FirstIterationProductRelease.Models.Account
+@{
+    ViewData["Title"] = "Account Details";
+}
+<div>
+    <h4>Account Information</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>Your Name: </dt>
+        <dd>@Model.LegalName</dd>
+
+        <dt>Registered Email: </dt>
+        <dd>@Model.Email</dd>
+
+        <dt>Your Scholarship Status: </dt>
+        <dd>@Model.ScholarshipStatus</dd>
+    </dl>
+</div>

@@ -36,6 +36,18 @@ namespace FirstIterationProductRelease.Controllers
             return null;
         }
 
+        public ActionResult Details()
+        {
+            // simulates data fetching from database
+            var accountDetail = new Account
+            {
+                LegalName = "Jacob Yoast",
+                Email = "jacob.yoast@gmail.com",
+                ScholarshipStatus = "Pending",
+            };
+
+            return View(accountDetail);
+        }
 
 
         public ViewResult AccountList() {
