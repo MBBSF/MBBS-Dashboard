@@ -123,5 +123,46 @@ namespace FirstIterationProductRelease.Controllers
         }
 
 
+        // log code abdel-
+
+        private IAccountRepository _accountRepository;
+        private IActivityLogRepository _activityLogRepository;
+
+        public AccountController(IAccountRepository accountRepository, IActivityLogRepository activityLogRepository)
+        {
+            _accountRepository = accountRepository;
+            _activityLogRepository = activityLogRepository;
+        }
+
+        public ViewResult SignInAttempt(Account attempt)
+        {
+            Console.WriteLine(attempt.Username + ", " + attempt.Password);
+            Account acc = GetAccountByUsername(attempt.Username);
+            if (acc == null || acc.Password != attempt.Password)
+                return View("LogInPage");
+            else
+                ActiveAccount = acc;
+
+            Console.WriteLine(ActiveAccount.Username + " is the active account");
+            return View("Index");
+        }
+
+        public ViewResult ActivityLog()
+        {
+            var logs = _activityLogRepository.GetLogsForAccount(ActiveAccount.Id);
+            return View(logs);
+        }
+
+
     }
+
+    // attenpting to create activity log -abdel
+    public class ActivityLog
+    {
+        public int Id { get; set; }
+        public int AccountId { get; set; }
+        public string Action { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+
 }

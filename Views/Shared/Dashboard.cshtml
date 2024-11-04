@@ -1,0 +1,39 @@
+﻿@model FirstIterationProductRelease.Models.DashboardViewModel
+
+<h2>Dashboard</h2>
+
+<div>
+    <h3>Key Performance Indicators (KPIs)</h3>
+    @if (Model.KpiData != null)
+    {
+        <p>Total Users: @Model.KpiData.TotalUsers</p>
+        // add this code later -abdel <p>Pending Approvals: @Model.KpiData.PendingApprovals</p>
+        // also dd additional KPIs here as if need 
+    }
+    else
+    {
+        <p>No KPI data available.</p>
+    }
+</div>
+
+<h3>Activity Log</h3>
+@if (Model.ActivityLogs != null && Model.ActivityLogs.Any())
+{
+    <table>
+        <tr>
+            <th>Action</th>
+            <th>Timestamp</th>
+        </tr>
+        @foreach (var log in Model.ActivityLogs)
+        {
+            <tr>
+                <td>@log.Action</td>
+                <td>@log.Timestamp.ToString("g")</td> <!-- Formats the date and time for better readability -->
+            </tr>
+        }
+    </table>
+}
+else
+{
+    <p>No activity logs available.</p>
+}
