@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FirstIterationProductRelease.Models;
+using FirstIterationProductRelease.Controllers;
 
 namespace FirstIterationProductRelease.Models
 {
@@ -10,6 +11,9 @@ namespace FirstIterationProductRelease.Models
         { }
         public DbSet<Account> Accounts { get; set; }
         public DbSet<ExcelDataCourseraSpecialization> ExcelDataCourseraSpecialization { get; set; }
+
+        // log test
+        public DbSet<ActivityLog> ActivityLogs { get; set; } // new DbSet for ActivityLog
 
 
 
