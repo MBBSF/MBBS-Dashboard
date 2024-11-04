@@ -43,15 +43,36 @@ namespace FirstIterationProductRelease.Controllers
 
         public ActionResult AccountDetails()
         {
+            
             var accountDetail = new Account
             {
                 LegalName = "Jacob Yoast",
                 Email = "jacob.yoast@gmail.com",
-                ScholarshipStatus = "Pending",
+                UserRole = "Admin",
+                Password = "********",
             };
 
             return View(accountDetail);
         }
+
+        [HttpGet]
+        public ActionResult ChangePassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePassword model)
+        {
+            if (ModelState.IsValid)
+            {
+                return View("PasswordChangeSuccessful");
+            }
+
+            return View(model);
+        }
+
 
         public ViewResult AccountList()
         {
