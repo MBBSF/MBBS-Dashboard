@@ -1,4 +1,4 @@
-﻿using FirstIterationProductRelease.Models;
+using FirstIterationProductRelease.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 
