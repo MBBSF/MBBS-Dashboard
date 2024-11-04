@@ -9,8 +9,9 @@ namespace FirstIterationProductRelease.Models
         base(options)
         { }
         public DbSet<Account> Accounts { get; set; }
+        public DbSet<ExcelDataCourseraSpecialization> ExcelDataCourseraSpecialization { get; set; }
 
-        
+
 
     }
 }
