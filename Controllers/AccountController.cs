@@ -1,5 +1,7 @@
 ﻿using FirstIterationProductRelease.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace FirstIterationProductRelease.Controllers
 {
@@ -43,13 +45,32 @@ namespace FirstIterationProductRelease.Controllers
             {
                 LegalName = "Jacob Yoast",
                 Email = "jacob.yoast@gmail.com",
-                ScholarshipStatus = "Pending",
+                UserRole = "Admin",
+                Password = "********",
             };
 
             return View(accountDetail);
         }
 
+        [HttpGet]
+        public ActionResult ChangePassword()
+        {
+            return View();
+        }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePassword model)
+        {
+            if (ModelState.IsValid)
+            {
+                return View("PasswordChangeSuccessful");
+            }
+
+            return View(model);
+        }
+
+     
         public ViewResult AccountList() {
             return View(AccountRepository.Accounts);
         }
