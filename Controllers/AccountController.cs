@@ -149,6 +149,40 @@ namespace FirstIterationProductRelease.Controllers
             var logs = _activityLogRepository.GetLogsForAccount(ActiveAccount.Id);
             return View(logs);
         }
+
+        //abdel edit acount
+        [HttpGet]
+        public IActionResult EditAccount()
+        {
+            // Assuming ActiveAccount represents the currently logged-in user's account
+            return View(ActiveAccount);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditAccount(Account updatedAccount)
+        {
+            if (ModelState.IsValid)
+            {
+                // Update the active account with new values
+                ActiveAccount.LegalName = updatedAccount.LegalName;
+                ActiveAccount.Email = updatedAccount.Email;
+                ActiveAccount.Password = updatedAccount.Password; // For demo purposes, no encryption
+
+                // Save changes to the local repository for the demo
+                _accountRepository.SaveAccount(ActiveAccount);
+
+                TempData["SuccessMessage"] = "Account updated successfully!";
+                return RedirectToAction("AccountDetails");
+            }
+
+            return View(updatedAccount); // Show the form with validation errors
+        }
+
+
+
+
+
     }
 
     public class ActivityLog
