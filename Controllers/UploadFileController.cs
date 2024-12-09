@@ -83,22 +83,25 @@ public class UploadFileController : Controller
 
             var dataList = new List<ExcelDataCourseraSpecialization>();
 
-            
             await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraSpecialization>())
             {
+                // Handle nulls or missing values
+                record.EnrollmentSource ??= "Unknown"; // Default value
+                record.ProgramName ??= "Not Specified"; // Default value
+                record.LocationRegion ??= "Not Specified"; // Default value
+
                 dataList.Add(record);
             }
 
             _context.ExcelDataCourseraSpecialization.AddRange(dataList);
             await _context.SaveChangesAsync();
-
-                
-            
-            
         }
     }
 
-
+    public IActionResult UploadSuccess()
+    {
+        return View();
+    }
 
 
 }

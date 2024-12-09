@@ -4,6 +4,7 @@ using FirstIterationProductRelease.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FirstIterationProductRelease.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241208050009_MakeLocationRegionNullable")]
+    partial class MakeLocationRegionNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -101,27 +104,33 @@ namespace FirstIterationProductRelease.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EnrollmentSource")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("EnrollmentTime")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ExternalId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("JobTitle")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("JobType")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("LastSpecializationActivityTime")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("LocationCity")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LocationCountry")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LocationRegion")
@@ -147,6 +156,7 @@ namespace FirstIterationProductRelease.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SpecializationCertificateURL")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("SpecializationCompletionTime")
