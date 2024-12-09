@@ -73,6 +73,22 @@ namespace FirstIterationProductRelease.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        public ActionResult DeleteAccount()
+        {
+            return View();
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAccount(DeleteAccount model)
+        {
+            if (ModelState.IsValid)
+            {
+                return View("DeletionSuccessful");
+            }
+
+            return View(model);
+        }
 
         public ViewResult AccountList()
         {

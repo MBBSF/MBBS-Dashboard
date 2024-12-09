@@ -1,11 +1,12 @@
-﻿@model FirstIterationProductRelease.Models.ChangePassword
+﻿@model FirstIterationProductRelease.Models.DeleteAccount
 
 @{
-    ViewData["Title"] = "Change Password";
+    ViewData["Title"] = "DeleteAccount";
 }
 
+
 <h2>Change Password</h2>
-<hr/>
+<hr />
 <div class="row">
     <div class="col-md-12">
         <form method="post">
@@ -16,16 +17,11 @@
                 <span asp-validation-for="CurrentPassword" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="NewPassword"></label>
-                <input asp-for="NewPassword" class="form-control" />
-                <span asp-validation-for="NewPassword" class="text-danger"></span>
-            </div>
-            <div class="form-group">
                 <label asp-for="ConfirmPassword"></label>
                 <input asp-for="ConfirmPassword" class="form-control" />
                 <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
             </div>
-            <button type="submit" class="btn btn-primary">Update</button>
+            <button type="submit" class="btn btn-primary">Delete Account</button>
         </form>
     </div>
 </div>
