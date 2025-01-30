@@ -20,7 +20,65 @@ public class UploadFileController : Controller
         _context = context;
     }
 
+    private readonly Dictionary<string, List<string>> ExpectedHeaders = new()
+    {
+        { "Coursera", new List<string> { "Name", "Email", "External Id", "Specialization", "Specialization Slug", "University", "Enrollment Time", "Last Specialization Activity Time", "# Completed Courses", "# Courses in Specialization", "Completed", "Removed From Program", "Program Slug", "Program Name", "Enrollment Source", "Specialization Completion Time", "Specialization Certificate URL", "Job Title", "Job Type", "Location City", "Location Region", "Location Country" } },
+        { "Cognito", new List<string> { "MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id", "Name_First", "Name_Middle", "Name_Last", "Phone", "Age", "Address_Line1", "Address_Line2", "Address_City", "Address_State", "Address_PostalCode", "IntendedMajor", "ExpectedGraduation", "CollegePlanToAttend_Name", "CollegePlanToAttend_CityState", "HighSchoolCollegeData_CurrentStudent", "HighSchoolCollegeData_HighSchoolCollegeInformation", "HighSchoolCollegeData_Phone", "HighSchoolCollegeData_HighSchoolGraduation", "HighSchoolCollegeData_CumulativeGPA", "HighSchoolCollegeData_ACTCompositeScore", "HighSchoolCollegeData_SATCompositeScore", "HighSchoolCollegeData_SchoolCommunityRelatedActivities", "HighSchoolCollegeData_HonorsAndSpecialRecognition", "HighSchoolCollegeData_ExplainYourNeedForAssistance", "WriteYourNameAsFormOfSignature", "Date", "Entry_Status", "Entry_DateCreated", "Entry_DateSubmitted", "Entry_DateUpdated" } },
+        { "GoogleForms", new List<string> { "Timestamp", "Mentor", "Mentee", "Date", "Time", "Method of Contact", "Comment" } }
+    };
 
+    private async Task<bool> ValidateFileHeaders(IFormFile file, string source, string fileExtension)
+    {
+        if (!ExpectedHeaders.ContainsKey(source)) return false;
+
+        var expectedHeaders = ExpectedHeaders[source];
+
+        if (fileExtension == ".csv")
+        {
+            using (var streamReader = new StreamReader(file.OpenReadStream()))
+            using (var csv = new CsvReader(streamReader, new CsvConfiguration(CultureInfo.InvariantCulture) { HasHeaderRecord = true }))
+            {
+                await csv.ReadAsync();
+                csv.ReadHeader();
+                var fileHeaders = csv.HeaderRecord?.ToList();
+
+                if (fileHeaders == null || !fileHeaders.SequenceEqual(expectedHeaders))
+                {
+                    return false; // Headers do not match
+                }
+            }
+        }
+        else if (fileExtension == ".xlsx")
+        {
+            return ValidateExcelHeaders(file, expectedHeaders);
+            //return !expectedHeaders.Except(fileHeaders).Any();
+        }
+
+        return true; // Headers match
+    }
+
+    private bool ValidateExcelHeaders(IFormFile file, List<string> expectedHeaders)
+    {
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+        using (var stream = new MemoryStream())
+        {
+            file.CopyTo(stream);
+            using (var package = new ExcelPackage(stream))
+            {
+                var worksheet = package.Workbook.Worksheets[0];
+                int colCount = worksheet.Dimension.Columns;
+                var fileHeaders = new List<string>();
+
+                for (int col = 1; col <= colCount; col++)
+                {
+                    fileHeaders.Add(worksheet.Cells[1, col].Text.Trim());
+                }
+
+                return fileHeaders.SequenceEqual(expectedHeaders);
+            }
+        }
+    }
 
     [HttpGet]
     public IActionResult Upload()
@@ -37,6 +95,14 @@ public class UploadFileController : Controller
 
             try
             {
+                // Validate file headers
+                if (!await ValidateFileHeaders(model.File, model.Source, fileExtension))
+                {
+                    ModelState.AddModelError("", "The uploaded file does not match the expected format for the selected data source.");
+                    return View(model);
+                }
+
+                // Process the file if valid
                 switch (fileExtension)
                 {
                     case ".csv":

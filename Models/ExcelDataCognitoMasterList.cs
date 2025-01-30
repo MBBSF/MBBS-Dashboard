@@ -1,10 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FirstIterationProductRelease.Models
 {
     public class ExcelDataCognitoMasterList
     {
-        public int Id { get; set; }
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id { get; set; }
         public string Name_First { get; set; }
         public string Name_Middle { get; set; }
         public string Name_Last { get; set; }
