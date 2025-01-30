@@ -4,16 +4,17 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Register application services
+builder.Services.AddControllersWithViews();
+
 // Configure database context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// Register application services
-builder.Services.AddControllersWithViews();
-builder.Services.AddTransient<IAccountRepository, EFAccountRepository>();
-builder.Services.AddTransient<IActivityLogRepository, EFActivityLogRepository>(); // Registering IActivityLogRepository -abdel
-
+// Use InMemoryAccountRepository instead of EFAccountRepository
+builder.Services.AddSingleton<IAccountRepository, InMemoryAccountRepository>();
+builder.Services.AddTransient<IActivityLogRepository, EFActivityLogRepository>(); // abdel EFActivityLogRepository test
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -28,9 +29,10 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
 
+// Set the default landing page to login ---abdel
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}"
+    pattern: "{controller=Account}/{action=LogInPage}/{id?}"
 );
 
 app.Run();

@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Account Details";
 }
+
 <div>
     <h4>Account Information</h4>
     <hr />
@@ -17,9 +18,15 @@
 
         <dt>Your Password:</dt>
         <dd>@Model.Password</dd>
-        
     </dl>
 </div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
 
 <a class="btn btn-primary text-white btn-sm" asp-controller="Account" asp-action="ChangePassword" style="margin-top: 20px;">Change Password</a>
 <a class="btn btn-success text-white btn-sm" asp-controller="Account" asp-action="EditAccount" style="margin-top: 20px;">Edit Account</a>

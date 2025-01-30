@@ -1,5 +1,6 @@
 ﻿using FirstIterationProductRelease.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
 namespace FirstIterationProductRelease.Controllers
@@ -13,12 +14,13 @@ namespace FirstIterationProductRelease.Controllers
             _logger = logger;
         }
 
-        public IActionResult FAQ()
+        // Redirect root URL to login page
+        public IActionResult Index()
         {
-            return View();
+            return View(); // Ensure it simply loads the Home page, no redirection
         }
 
-        public IActionResult Index()
+        public IActionResult FAQ()
         {
             return View();
         }
