@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace FirstIterationProductRelease.Models
+namespace MBBS.Dashboard.web.Models
 {
     public class ExcelDataCognitoMasterList
     {

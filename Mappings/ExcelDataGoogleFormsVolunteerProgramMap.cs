@@ -1,6 +1,7 @@
 ﻿using CsvHelper.Configuration;
+using MBBS.Dashboard.web.Models;
 
-namespace FirstIterationProductRelease.Models
+namespace MBBS.Dashboard.web.Mappings
 {
     public class ExcelDataGoogleFormsVolunteerProgramMap : ClassMap<ExcelDataGoogleFormsVolunteerProgram>
     {

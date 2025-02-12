@@ -1,5 +1,5 @@
 ﻿using CsvHelper.Configuration;
-using FirstIterationProductRelease.Models;
+using MBBS.Dashboard.web.Models;
 
 public class ExcelDataCourseraSpecializationMap : ClassMap<ExcelDataCourseraSpecialization>
 {

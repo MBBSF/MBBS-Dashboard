@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using FirstIterationProductRelease.Models;
-using FirstIterationProductRelease.Controllers;
+using MBBS.Dashboard.web.Controllers;
 
-namespace FirstIterationProductRelease.Models
+namespace MBBS.Dashboard.web.Models
 {
     public class ApplicationDbContext : DbContext
     {

@@ -1,29 +1,28 @@
-﻿using FirstIterationProductRelease.Models;
+﻿using MBBS.Dashboard.web.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FirstIterationProductRelease.Controllers
+namespace MBBS.Dashboard.web.Controllers
 {
     public class DashboardController : Controller
     {
-        private readonly IActivityLogRepository _activityLogRepository;
-
-        public DashboardController(IActivityLogRepository activityLogRepository)
+        public ActionResult Index()
         {
-            _activityLogRepository = activityLogRepository;
+            // Load initial dashboard view
+            return View();
         }
 
-        public IActionResult Dashboard()
+        [HttpPost]
+        public ActionResult ApplyFilter(string filterCriteria)
         {
-            var model = new DashboardViewModel
-            {
-                KpiData = new KpiData
-                {
-                    TotalUsers = 100 // will convert to database
-                },
-                ActivityLogs = _activityLogRepository.GetLogsForAccount(1) // Example account ID
-            };
+            ViewBag.Filter = filterCriteria;
+            return View("Index");
+        }
 
-            return View(model);
+        public ActionResult ViewDataByPlatform(int platformId)
+        {
+            // Example: Fetch data based on selected platform
+            ViewBag.PlatformId = platformId;
+            return View("Index");
         }
     }
 }

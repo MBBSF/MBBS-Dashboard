@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace FirstIterationProductRelease.Migrations
+namespace MBBS.Dashboard.web.Migrations
 {
     /// <inheritdoc />
     public partial class Images : Migration

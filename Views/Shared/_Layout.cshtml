@@ -1,5 +1,5 @@
-@using FirstIterationProductRelease.Models
-@using FirstIterationProductRelease.Controllers
+@using MBBS.Dashboard.web.Controllers
+
 <!DOCTYPE html>
 @{
     Account acc = AccountController.ActiveAccount;
@@ -13,7 +13,7 @@
     <title>@ViewData["Title"] - M.B.B.S.F Metrics Dashboard</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/FirstIterationProductRelease.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/MBBS.Dashboard.web.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
@@ -53,6 +53,10 @@
 
                         <li class="nav-item">
                             <a class="nav-link text-white" asp-area="" asp-controller="Faq" asp-action="Faq">FAQ</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-area="" asp-controller="DashboardController" asp-action="Dashboard">Dashboard</a>
                         </li>
 
 
