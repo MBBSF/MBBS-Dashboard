@@ -1,6 +1,4 @@
-﻿using FirstIterationProductRelease.Models;
-
-namespace FirstIterationProductRelease.Models
+﻿namespace MBBS.Dashboard.web.Models
 {
     public class EFAccountRepository : IAccountRepository
     {

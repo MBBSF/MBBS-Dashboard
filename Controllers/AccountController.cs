@@ -1,9 +1,9 @@
-using FirstIterationProductRelease.Models;
+using MBBS.Dashboard.web.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
 
-namespace FirstIterationProductRelease.Controllers
+namespace MBBS.Dashboard.web.Controllers
 {
     public class AccountController : Controller
     {
@@ -44,7 +44,7 @@ namespace FirstIterationProductRelease.Controllers
 
         public ActionResult AccountDetails()
         {
-            
+
             var accountDetail = new Account
             {
                 LegalName = "Jacob Yoast",

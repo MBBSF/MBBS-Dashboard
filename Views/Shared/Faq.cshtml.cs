@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace FirstIterationProductRelease.Views.Shared
+namespace MBBS.Dashboard.web.Views.Shared
 {
     public class FaqModel : PageModel
     {

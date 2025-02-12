@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Net.Mail;
 using System.Net;
-using FirstIterationProductRelease.Models;
+using MBBS.Dashboard.web.Models;
 
-namespace FirstIterationProductRelease.Controllers
+namespace MBBS.Dashboard.web.Controllers
 {
     public class ContactController : Controller
     {

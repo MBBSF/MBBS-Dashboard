@@ -1,5 +1,5 @@
-using FirstIterationProductRelease.Controllers;
-using FirstIterationProductRelease.Models;
+using MBBS.Dashboard.web.Controllers;
+using MBBS.Dashboard.web.Models;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

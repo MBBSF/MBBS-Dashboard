@@ -1,4 +1,4 @@
-namespace FirstIterationProductRelease.Models
+namespace MBBS.Dashboard.web.Models
 {
     public class ErrorViewModel
     {
