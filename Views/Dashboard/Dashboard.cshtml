@@ -1,22 +1,18 @@
-<<<<<<< Updated upstream
-﻿@model FirstIterationProductRelease.Models.DashboardViewModel
-=======
 ﻿@model MBBS.Dashboard.web.Models.DashboardViewModel
 
 @{
     ViewBag.Title = "Dashboard";
 }
->>>>>>> Stashed changes
 
 <h2>Dashboard</h2>
 
-<form method="post" asp-controller="Dashboard" asp-action="ApplyFilter">
+<form method="post" action="/Dashboard/ApplyFilter">
     <label for="filter">Filter Criteria:</label>
     <input type="text" id="filter" name="filterCriteria" />
     <button type="submit">Apply Filter</button>
 </form>
 
-<form method="post" asp-controller="Dashboard" asp-action="ViewDataByPlatform">
+<form method="post" action="/Platform/ChangePlatform">
     <label for="platform">Select Platform:</label>
     <select id="platform" name="platformId">
         <option value="1">Coursera</option>

@@ -5,6 +5,7 @@ namespace FirstIterationProductRelease.Controllers
 {
     public class DashboardController : Controller
     {
+<<<<<<< Updated upstream
         private readonly IActivityLogRepository _activityLogRepository;
 
         public DashboardController(IActivityLogRepository activityLogRepository)
@@ -24,6 +25,30 @@ namespace FirstIterationProductRelease.Controllers
             };
 
             return View(model);
+=======
+        public IActionResult Index()
+        {
+            var viewModel = new DashboardViewModel
+            {
+                KpiData = new KpiData { TotalUsers = 100 }, // Example data
+                ActivityLogs = new List<ActivityLog>() // Add some test activity logs if needed
+            };
+
+            return View("Dashboard", viewModel); // Explicitly loading Dashboard.cshtml
+        }
+
+        [HttpPost]
+        public IActionResult ApplyFilter(string filterCriteria)
+        {
+            ViewBag.Filter = filterCriteria;
+            return RedirectToAction("Index"); // Redirecting to avoid resubmission on refresh
+        }
+
+        public IActionResult ViewDataByPlatform(int platformId)
+        {
+            ViewBag.PlatformId = platformId;
+            return RedirectToAction("Index"); // Redirecting for consistency
+>>>>>>> Stashed changes
         }
     }
 }
