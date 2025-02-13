@@ -5,24 +5,49 @@ namespace MBBS.Dashboard.web.Controllers
 {
     public class DashboardController : Controller
     {
-        public ActionResult Index()
+
+        private readonly IActivityLogRepository _activityLogRepository;
+
+        public DashboardController(IActivityLogRepository activityLogRepository)
         {
-            // Load initial dashboard view
-            return View();
+            _activityLogRepository = activityLogRepository;
+        }
+        public IActionResult Dashboard()
+        {
+            var model = new DashboardViewModel
+            {
+                KpiData = new KpiData
+                {
+                    TotalUsers = 100 // will convert to database
+                },
+                ActivityLogs = _activityLogRepository.GetLogsForAccount(1) // Example account ID
+            };
+
+            return View(model);
+
+        public IActionResult Index()
+        {
+            var viewModel = new DashboardViewModel
+            {
+                KpiData = new KpiData { TotalUsers = 100 }, // Example data
+                ActivityLogs = new List<ActivityLog>() // Add some test activity logs if needed
+            };
+
+            return View("Dashboard", viewModel); // Explicitly loading Dashboard.cshtml
         }
 
         [HttpPost]
-        public ActionResult ApplyFilter(string filterCriteria)
+        public IActionResult ApplyFilter(string filterCriteria)
         {
             ViewBag.Filter = filterCriteria;
-            return View("Index");
+            return RedirectToAction("Index"); // Redirecting to avoid resubmission on refresh
         }
 
-        public ActionResult ViewDataByPlatform(int platformId)
+        public IActionResult ViewDataByPlatform(int platformId)
         {
-            // Example: Fetch data based on selected platform
             ViewBag.PlatformId = platformId;
-            return View("Index");
+            return RedirectToAction("Index"); // Redirecting for consistency
+
         }
     }
 }
