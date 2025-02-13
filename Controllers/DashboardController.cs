@@ -1,18 +1,17 @@
-﻿using FirstIterationProductRelease.Models;
+﻿using MBBS.Dashboard.web.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FirstIterationProductRelease.Controllers
+namespace MBBS.Dashboard.web.Controllers
 {
     public class DashboardController : Controller
     {
-<<<<<<< Updated upstream
+
         private readonly IActivityLogRepository _activityLogRepository;
 
         public DashboardController(IActivityLogRepository activityLogRepository)
         {
             _activityLogRepository = activityLogRepository;
         }
-
         public IActionResult Dashboard()
         {
             var model = new DashboardViewModel
@@ -25,7 +24,7 @@ namespace FirstIterationProductRelease.Controllers
             };
 
             return View(model);
-=======
+
         public IActionResult Index()
         {
             var viewModel = new DashboardViewModel
@@ -48,7 +47,7 @@ namespace FirstIterationProductRelease.Controllers
         {
             ViewBag.PlatformId = platformId;
             return RedirectToAction("Index"); // Redirecting for consistency
->>>>>>> Stashed changes
+
         }
     }
 }

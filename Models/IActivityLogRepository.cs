@@ -1,7 +1,7 @@
-﻿using FirstIterationProductRelease.Controllers;
+﻿using MBBS.Dashboard.web.Controllers;
 using System.Collections.Generic;
 
-namespace FirstIterationProductRelease.Models
+namespace MBBS.Dashboard.web.Models
 {
     public interface IActivityLogRepository
     {

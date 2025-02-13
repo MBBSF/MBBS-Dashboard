@@ -1,6 +1,6 @@
 ﻿using System.Web;
 
-namespace FirstIterationProductRelease.Models
+namespace MBBS.Dashboard.web.Models
 {
     public class UploadFile
     {

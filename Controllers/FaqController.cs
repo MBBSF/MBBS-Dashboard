@@ -1,10 +1,10 @@
-﻿using FirstIterationProductRelease.Models;
+﻿using MBBS.Dashboard.web.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
 //test
 
-namespace FirstIterationProductRelease.Controllers
+namespace MBBS.Dashboard.web.Controllers
 {
     public class FaqController : Controller
     {

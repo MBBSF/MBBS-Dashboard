@@ -1,8 +1,8 @@
-﻿using FirstIterationProductRelease.Controllers;
+﻿using MBBS.Dashboard.web.Controllers;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FirstIterationProductRelease.Models
+namespace MBBS.Dashboard.web.Models
 {
     public class EFActivityLogRepository : IActivityLogRepository
     {
