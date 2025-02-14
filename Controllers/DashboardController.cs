@@ -24,6 +24,7 @@ namespace MBBS.Dashboard.web.Controllers
             };
 
             return View(model);
+        }
 
         public IActionResult Index()
         {
