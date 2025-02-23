@@ -4,4 +4,12 @@
 
 <h1>Upload Successful</h1>
 <p>Your file has been successfully processed.</p>
+
+@if (ViewBag.DuplicateMessage != null)
+{
+    <div class="alert alert-warning">
+        @ViewBag.DuplicateMessage
+    </div>
+}
+
 <a href="@Url.Action("Upload", "UploadFile")">Upload another file</a>
