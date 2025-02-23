@@ -2,6 +2,7 @@ using MBBS.Dashboard.web.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MBBS.Dashboard.web.Controllers
 {
@@ -10,6 +11,7 @@ namespace MBBS.Dashboard.web.Controllers
         private readonly IAccountRepository _accountRepository;
         private readonly IActivityLogRepository _activityLogRepository;
 
+        // For demo purposes only. In a production app, use a proper authentication mechanism.
         public static Account ActiveAccount;
 
         public AccountController(IAccountRepository accountRepository, IActivityLogRepository activityLogRepository)
@@ -18,46 +20,45 @@ namespace MBBS.Dashboard.web.Controllers
             _activityLogRepository = activityLogRepository;
         }
 
+        // Helper method to check if the active user is an Admin.
+        private bool IsAdmin()
+        {
+            return ActiveAccount != null &&
+                   ActiveAccount.UserRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Action to display Access Denied.
+        public IActionResult AccessDenied()
+        {
+            return View(); // Create Views/Account/AccessDenied.cshtml
+        }
+
+        // Utility methods
         public Account GetAccountById(int id)
         {
-            foreach (Account acc in _accountRepository.Accounts)
-            {
-                if (acc.Id == id)
-                {
-                    return acc;
-                }
-            }
-            return null;
+            return _accountRepository.Accounts.FirstOrDefault(acc => acc.Id == id);
         }
 
         public Account GetAccountByUsername(string username)
         {
-            foreach (Account acc in _accountRepository.Accounts)
-            {
-                if (acc.Username == username)
-                {
-                    return acc;
-                }
-            }
-            return null;
+            return _accountRepository.Accounts.FirstOrDefault(acc => acc.Username == username);
         }
 
-        public ActionResult AccountDetails()
+        // --------------------------
+        // Actions accessible to all logged-in users:
+        // --------------------------
+
+        public IActionResult AccountDetails()
         {
-
-            var accountDetail = new Account
+            if (ActiveAccount == null)
             {
-                LegalName = "Jacob Yoast",
-                Email = "jacob.yoast@gmail.com",
-                UserRole = "Admin",
-                Password = "********",
-            };
-
-            return View(accountDetail);
+                return RedirectToAction("LogInPage");
+            }
+            return View(ActiveAccount);
         }
 
         [HttpGet]
-        public ActionResult ChangePassword()
+        public IActionResult ChangePassword()
         {
             return View();
         }
@@ -68,110 +69,19 @@ namespace MBBS.Dashboard.web.Controllers
         {
             if (ModelState.IsValid)
             {
+                // Implement password change logic here.
                 return View("PasswordChangeSuccessful");
             }
-
             return View(model);
         }
 
-        [HttpGet]
-        public ActionResult DeleteAccount()
-        {
-            return View();
-        }
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAccount(DeleteAccount model)
-        {
-            if (ModelState.IsValid)
-            {
-                return View("DeletionSuccessful");
-            }
-
-            return View(model);
-        }
-
-        public ViewResult AccountList()
-        {
-            return View(_accountRepository.Accounts);
-        }
-
-        public ViewResult AccountCreation()
-        {
-            return View();
-        }
-
-        public ViewResult AccountSettings(int id)
-        {
-            return View(GetAccountById(id));
-        }
-
-        [HttpPost]
-        public IActionResult Edit(Account acc)
-        {
-            if (ModelState.IsValid)
-            {
-                _accountRepository.SaveAccount(acc);
-                return View("AccountList", _accountRepository.Accounts);
-            }
-            else
-            {
-                return View("AccountSettings", acc);
-            }
-        }
-
-        public ViewResult SignIn(Account attempt)
-        {
-            Console.WriteLine(attempt.Username + ", " + attempt.Password);
-            Account acc = GetAccountByUsername(attempt.Username);
-            if (acc == null || acc.Password != attempt.Password)
-                return View("LogInPage");
-            else
-                ActiveAccount = acc;
-
-            Console.WriteLine(ActiveAccount.Username + " is the active account");
-            return View("Index");
-        }
-
-        public ViewResult LogInPage()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public ViewResult NewAccount(Account acc)
-        {
-            if (!ModelState.IsValid)
-                return View("AccountCreation");
-
-            _accountRepository.SaveAccount(acc);
-            return View("AccountList", _accountRepository.Accounts);
-        }
-
-        public ViewResult SignInAttempt(Account attempt)
-        {
-            Console.WriteLine(attempt.Username + ", " + attempt.Password);
-            Account acc = GetAccountByUsername(attempt.Username);
-            if (acc == null || acc.Password != attempt.Password)
-                return View("LogInPage");
-            else
-                ActiveAccount = acc;
-
-            Console.WriteLine(ActiveAccount.Username + " is the active account");
-            return View("Index");
-        }
-
-        public ViewResult ActivityLog()
-        {
-            var logs = _activityLogRepository.GetLogsForAccount(ActiveAccount.Id);
-            return View(logs);
-        }
-
-        //abdel edit acount
         [HttpGet]
         public IActionResult EditAccount()
         {
-            // Assuming ActiveAccount represents the currently logged-in user's account
+            if (ActiveAccount == null)
+            {
+                return RedirectToAction("LogInPage");
+            }
             return View(ActiveAccount);
         }
 
@@ -179,29 +89,179 @@ namespace MBBS.Dashboard.web.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult EditAccount(Account updatedAccount)
         {
+            if (ActiveAccount == null)
+            {
+                return RedirectToAction("LogInPage");
+            }
+
             if (ModelState.IsValid)
             {
-                // Update the active account with new values
+                // Update only allowed fields.
                 ActiveAccount.LegalName = updatedAccount.LegalName;
                 ActiveAccount.Email = updatedAccount.Email;
-                ActiveAccount.Password = updatedAccount.Password; // For demo purposes, no encryption
 
-                // Save changes to the local repository for the demo
+                if (!string.IsNullOrEmpty(updatedAccount.Password))
+                {
+                    ActiveAccount.Password = _accountRepository.HashPassword(updatedAccount.Password);
+                }
+
                 _accountRepository.SaveAccount(ActiveAccount);
-
                 TempData["SuccessMessage"] = "Account updated successfully!";
                 return RedirectToAction("AccountDetails");
             }
-
-            return View(updatedAccount); // Show the form with validation errors
+            return View(updatedAccount);
         }
 
+        public IActionResult ActivityLog()
+        {
+            if (ActiveAccount == null)
+            {
+                return RedirectToAction("LogInPage");
+            }
 
+            var logs = _activityLogRepository.GetLogsForAccount(ActiveAccount.Id);
+            return View(logs);
+        }
 
+        // --------------------------
+        // ADMIN-ONLY actions:
+        // --------------------------
 
+        public IActionResult AccountList()
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AccessDenied");
+            }
+            return View(_accountRepository.Accounts);
+        }
 
+        public IActionResult AccountCreation()
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AccessDenied");
+            }
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult NewAccount(Account acc)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AccessDenied");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View("AccountCreation");
+            }
+
+            // Here you could decide to allow the admin to set the role.
+            // For example, if the admin inputs "Admin" as the role in the form,
+            // it will be saved as such.
+            // If not provided, you might want to set a default:
+            if (string.IsNullOrWhiteSpace(acc.UserRole))
+            {
+                acc.UserRole = "User";
+            }
+
+            // Hash the password before saving.
+            acc.Password = _accountRepository.HashPassword(acc.Password);
+            _accountRepository.SaveAccount(acc);
+
+            return RedirectToAction("AccountList");
+        }
+
+        public IActionResult AccountSettings(int id)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AccessDenied");
+            }
+            var account = GetAccountById(id);
+            if (account == null)
+            {
+                return View("Error"); // Or a NotFound view.
+            }
+            return View(account);
+        }
+
+        [HttpPost]
+        public IActionResult Edit(Account acc)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AccessDenied");
+            }
+
+            if (ModelState.IsValid)
+            {
+                _accountRepository.SaveAccount(acc);
+                return RedirectToAction("AccountList");
+            }
+            return View("AccountSettings", acc);
+        }
+
+        [HttpGet]
+        public IActionResult DeleteAccount()
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AccessDenied");
+            }
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAccount(DeleteAccount model)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AccessDenied");
+            }
+
+            if (ModelState.IsValid)
+            {
+                // Implement deletion logic.
+                // For example: var accountToDelete = GetAccountById(model.AccountId);
+                // if (accountToDelete != null) { /* remove account and save changes */ }
+
+                // For demonstration, assume deletion succeeded:
+                return View("DeletionSuccessful");
+            }
+            return View(model);
+        }
+
+        // --------------------------
+        // Authentication Actions:
+        // --------------------------
+
+        public IActionResult SignIn(Account attempt)
+        {
+            Account acc = _accountRepository.AuthenticateUser(attempt.Username, attempt.Password);
+            if (acc == null)
+            {
+                ViewBag.ErrorMessage = "Invalid login credentials.";
+                return View("LogInPage");
+            }
+            ActiveAccount = acc;
+            return RedirectToAction("Index", "Home");
+        }
+
+        public IActionResult LogOut()
+        {
+            ActiveAccount = null;
+            return RedirectToAction("LogInPage");
+        }
+
+        public IActionResult LogInPage()
+        {
+            return View();
+        }
     }
-
     public class ActivityLog
     {
         public int Id { get; set; }
