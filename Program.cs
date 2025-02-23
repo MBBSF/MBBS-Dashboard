@@ -13,7 +13,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 );
 
 // Use InMemoryAccountRepository instead of EFAccountRepository
-builder.Services.AddSingleton<IAccountRepository, InMemoryAccountRepository>();
+builder.Services.AddScoped<IAccountRepository, EFAccountRepository>();
 builder.Services.AddTransient<IActivityLogRepository, EFActivityLogRepository>(); // abdel EFActivityLogRepository test
 var app = builder.Build();
 
@@ -34,5 +34,32 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=LogInPage}/{id?}"
 );
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
 
+    // Apply any pending migrations.
+    context.Database.Migrate();
+
+    // Check if any accounts exist.
+    if (!context.Accounts.Any())
+    {
+        // Create a default admin account.
+        var accountRepository = services.GetRequiredService<IAccountRepository>();
+
+        var defaultAdmin = new Account
+        {
+            LegalName = "Default Admin",
+            Username = "admin",
+            Email = "admin@example.com",
+            // You must hash the password; for demonstration, we'll use a plaintext password then hash it.
+            Password = accountRepository.HashPassword("Admin@123"), // Replace with a secure default
+            UserRole = "Admin"
+        };
+
+        context.Accounts.Add(defaultAdmin);
+        context.SaveChanges();
+    }
+}
 app.Run();
