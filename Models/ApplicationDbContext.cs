@@ -13,6 +13,11 @@ namespace MBBS.Dashboard.web.Models
         public DbSet<ExcelDataCognitoMasterList> ExcelDataCognitoMasterList { get; set; }
         public DbSet<ExcelDataGoogleFormsVolunteerProgram> ExcelDataGoogleFormsVolunteerProgram { get; set; }
 
+        public DbSet<ExcelDataCourseraMembershipReport> ExcelDataCourseraMembershipReports { get; set; }
+
+        public DbSet<ExcelDataCourseraPivotLocationCityReport> ExcelDataCourseraPivotLocationCityReports { get; set; }
+        public DbSet<ExcelDataCourseraUsageReport> ExcelDataCourseraUsageReports { get; set; }
+
         // log test
         public DbSet<ActivityLog> ActivityLogs { get; set; } // new DbSet for ActivityLog
 

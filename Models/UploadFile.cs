@@ -1,4 +1,4 @@
-﻿using System.Web;
+﻿using Microsoft.AspNetCore.Http;
 
 namespace MBBS.Dashboard.web.Models
 {
@@ -6,6 +6,7 @@ namespace MBBS.Dashboard.web.Models
     {
         public IFormFile File { get; set; }
         public string Source { get; set; }
+        public string FileType { get; set; }  // New property for the file type
     }
 
     public enum DataSource
