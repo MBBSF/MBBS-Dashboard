@@ -21,22 +21,9 @@ else
                 <li class="list-group-item"><strong>Total Coursera Users:</strong> @Model.KpiData.TotalCourseraUsers</li>
                 <li class="list-group-item"><strong>Total Cognito Users:</strong> @Model.KpiData.TotalCognitoUsers</li>
                 <li class="list-group-item"><strong>Total Google Forms Users:</strong> @Model.KpiData.TotalGoogleFormsUsers</li>
-                @if (Model.KpiData.TopMentors != null && Model.KpiData.TopMentors.Any())
-                {
-                    <li class="list-group-item">
-                        <strong>Top Mentors:</strong>
-                        <ul>
-                            @foreach (var mentor in Model.KpiData.TopMentors)
-                            {
-                                <li>@mentor</li>
-                            }
-                        </ul>
-                    </li>
-                }
-                else
-                {
-                    <li class="list-group-item"><strong>Top Mentors:</strong> No data available</li>
-                }
+                <li class="list-group-item"><strong>Mentor Completion Rate:</strong> @Model.KpiData.MentorCompletionRate.ToString("P2")</li>
+                <li class="list-group-item"><strong>Phone Number Provision Rate:</strong> @Model.KpiData.PhoneNumberProvisionRate.ToString("P2")</li>
+                <li class="list-group-item"><strong>Total Mentoring Sessions:</strong> @Model.KpiData.TotalMentoringSessions</li>
             </ul>
         </div>
 
@@ -61,29 +48,110 @@ else
         </div>
     </div>
 
+    <!-- Distribution Data Section -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <h3>Specialization Distribution</h3>
+            @if (Model.KpiData.SpecializationDistribution != null && Model.KpiData.SpecializationDistribution.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var kvp in Model.KpiData.SpecializationDistribution)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            @kvp.Key
+                            <span class="badge bg-primary rounded-pill">@kvp.Value</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>No specialization data available.</p>
+            }
+        </div>
+        <div class="col-md-4">
+            <h3>Intended Major Distribution</h3>
+            @if (Model.KpiData.IntendedMajorDistribution != null && Model.KpiData.IntendedMajorDistribution.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var kvp in Model.KpiData.IntendedMajorDistribution)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            @kvp.Key
+                            <span class="badge bg-primary rounded-pill">@kvp.Value</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>No intended major data available.</p>
+            }
+        </div>
+        <div class="col-md-4">
+            <h3>Contact Method Preference</h3>
+            @if (Model.KpiData.ContactMethodPreference != null && Model.KpiData.ContactMethodPreference.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var kvp in Model.KpiData.ContactMethodPreference)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            @kvp.Key
+                            <span class="badge bg-primary rounded-pill">@kvp.Value</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>No contact method preference data available.</p>
+            }
+        </div>
+    </div>
+
+    <!-- Top Mentors Section -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h3>Top Mentors</h3>
+            @if (Model.KpiData.TopMentors != null && Model.KpiData.TopMentors.Any())
+            {
+                <ol class="list-group list-group-numbered">
+                    @foreach (var mentor in Model.KpiData.TopMentors)
+                    {
+                        <li class="list-group-item">@mentor</li>
+                    }
+                </ol>
+            }
+            else
+            {
+                <p>No top mentors data available.</p>
+            }
+        </div>
+    </div>
+
     <!-- Detailed Platform Data Section -->
-    @if (ViewBag.PlatformData != null)
+    @if (Model.PlatformData != null)
     {
         <div class="mt-4">
             <h3>Detailed Platform Data</h3>
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        @if (ViewBag.PlatformId == 1)
+                        @if (Model.PlatformId == 1)
                         {
                             <th>Name</th>
                             <th>Email</th>
                             <th>Specialization</th>
                             <th>Completed</th>
                         }
-                        else if (ViewBag.PlatformId == 2)
+                        else if (Model.PlatformId == 2)
                         {
                             <th>First Name</th>
                             <th>Last Name</th>
                             <th>Phone</th>
                             <th>Intended Major</th>
                         }
-                        else if (ViewBag.PlatformId == 3)
+                        else if (Model.PlatformId == 3)
                         {
                             <th>Mentor</th>
                             <th>Mentee</th>
@@ -93,24 +161,24 @@ else
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in ViewBag.PlatformData)
+                    @foreach (var item in Model.PlatformData)
                     {
                         <tr>
-                            @if (ViewBag.PlatformId == 1)
+                            @if (Model.PlatformId == 1)
                             {
                                 <td>@((item as dynamic).Name)</td>
                                 <td>@((item as dynamic).Email)</td>
                                 <td>@((item as dynamic).Specialization)</td>
                                 <td>@((item as dynamic).Completed)</td>
                             }
-                            else if (ViewBag.PlatformId == 2)
+                            else if (Model.PlatformId == 2)
                             {
                                 <td>@((item as dynamic).Name_First)</td>
                                 <td>@((item as dynamic).Name_Last)</td>
                                 <td>@((item as dynamic).Phone)</td>
                                 <td>@((item as dynamic).IntendedMajor)</td>
                             }
-                            else if (ViewBag.PlatformId == 3)
+                            else if (Model.PlatformId == 3)
                             {
                                 <td>@((item as dynamic).Mentor)</td>
                                 <td>@((item as dynamic).Mentee)</td>
