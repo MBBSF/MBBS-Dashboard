@@ -37,7 +37,7 @@ namespace MBBS.Dashboard.web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> ViewDataByPlatform(int platformId, string sortBy, string sortOrder)
+        public async Task<IActionResult> ViewDataByPlatform(int platformId)
         {
             var viewModel = await GetDashboardViewModel();
             viewModel.PlatformId = platformId;
@@ -95,7 +95,7 @@ namespace MBBS.Dashboard.web.Controllers
 
             viewModel.CurrentSortOrder = sortOrder == "asc" ? "desc" : "asc";
             viewModel.CurrentSortBy = sortBy;
-
+            
             return View("Dashboard", viewModel);
         }
 
