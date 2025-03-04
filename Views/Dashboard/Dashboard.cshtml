@@ -6,28 +6,150 @@
 
 <h2>Dashboard</h2>
 
-<form method="post" action="/Dashboard/ApplyFilter">
-    <label for="filter">Filter Criteria:</label>
-    <input type="text" id="filter" name="filterCriteria" />
-    <button type="submit">Apply Filter</button>
-</form>
-
-<form method="post" action="/Platform/ChangePlatform">
-    <label for="platform">Select Platform:</label>
-    <select id="platform" name="platformId">
-        <option value="1">Coursera</option>
-        <option value="2">Cognito</option>
-        <option value="3">Google Forms</option>
-    </select>
-    <button type="submit">Switch Platform</button>
-</form>
-
-@if (ViewBag.Message != null)
+@if (Model == null || Model.KpiData == null)
 {
-    <p>@ViewBag.Message</p>
+    <p>No dashboard data available.</p>
 }
-
-@if (ViewBag.Filter != null)
+else
 {
-    <p>Filter Applied: @ViewBag.Filter</p>
+    <div class="row">
+        <!-- Key Performance Metrics Section -->
+        <div class="col-md-6">
+            <h3>Key Performance Metrics</h3>
+            <ul class="list-group">
+                <li class="list-group-item"><strong>Total Users:</strong> @Model.KpiData.TotalUsers</li>
+                <li class="list-group-item"><strong>Total Coursera Users:</strong> @Model.KpiData.TotalCourseraUsers</li>
+                <li class="list-group-item"><strong>Total Cognito Users:</strong> @Model.KpiData.TotalCognitoUsers</li>
+                <li class="list-group-item"><strong>Total Google Forms Users:</strong> @Model.KpiData.TotalGoogleFormsUsers</li>
+                @if (Model.KpiData.TopMentors != null && Model.KpiData.TopMentors.Any())
+                {
+                    <li class="list-group-item">
+                        <strong>Top Mentors:</strong>
+                        <ul>
+                            @foreach (var mentor in Model.KpiData.TopMentors)
+                            {
+                                <li>@mentor</li>
+                            }
+                        </ul>
+                    </li>
+                }
+                else
+                {
+                    <li class="list-group-item"><strong>Top Mentors:</strong> No data available</li>
+                }
+            </ul>
+        </div>
+
+        <!-- Platform Data Section -->
+        <div class="col-md-6">
+            <h3>Platform Data</h3>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Platform Overview</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Coursera Users: @Model.KpiData.TotalCourseraUsers</li>
+                        <li class="list-group-item">Cognito Users: @Model.KpiData.TotalCognitoUsers</li>
+                        <li class="list-group-item">Google Forms Users: @Model.KpiData.TotalGoogleFormsUsers</li>
+                    </ul>
+                    <div class="mt-3">
+                        <a href="@Url.Action("ViewDataByPlatform", new { platformId = 1 })" class="btn btn-sm btn-outline-primary">Coursera Details</a>
+                        <a href="@Url.Action("ViewDataByPlatform", new { platformId = 2 })" class="btn btn-sm btn-outline-primary">Cognito Details</a>
+                        <a href="@Url.Action("ViewDataByPlatform", new { platformId = 3 })" class="btn btn-sm btn-outline-primary">Google Forms Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Platform Data Section -->
+    @if (ViewBag.PlatformData != null)
+    {
+        <div class="mt-4">
+            <h3>Detailed Platform Data</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        @if (ViewBag.PlatformId == 1)
+                        {
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Specialization</th>
+                            <th>Completed</th>
+                        }
+                        else if (ViewBag.PlatformId == 2)
+                        {
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Phone</th>
+                            <th>Intended Major</th>
+                        }
+                        else if (ViewBag.PlatformId == 3)
+                        {
+                            <th>Mentor</th>
+                            <th>Mentee</th>
+                            <th>Date</th>
+                            <th>Method of Contact</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in ViewBag.PlatformData)
+                    {
+                        <tr>
+                            @if (ViewBag.PlatformId == 1)
+                            {
+                                <td>@((item as dynamic).Name)</td>
+                                <td>@((item as dynamic).Email)</td>
+                                <td>@((item as dynamic).Specialization)</td>
+                                <td>@((item as dynamic).Completed)</td>
+                            }
+                            else if (ViewBag.PlatformId == 2)
+                            {
+                                <td>@((item as dynamic).Name_First)</td>
+                                <td>@((item as dynamic).Name_Last)</td>
+                                <td>@((item as dynamic).Phone)</td>
+                                <td>@((item as dynamic).IntendedMajor)</td>
+                            }
+                            else if (ViewBag.PlatformId == 3)
+                            {
+                                <td>@((item as dynamic).Mentor)</td>
+                                <td>@((item as dynamic).Mentee)</td>
+                                <td>@(((DateTime?)(item as dynamic).Date)?.ToString("d"))</td>
+                                <td>@((item as dynamic).MethodOfContact)</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <!-- Activity Logs Section -->
+    <div class="mt-4">
+        <h3>Activity Logs</h3>
+        @if (Model.ActivityLogs != null && Model.ActivityLogs.Any())
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.ActivityLogs)
+                    {
+                        <tr>
+                            <td>@log.Timestamp.ToString("g")</td>
+                            <td>@log.Action</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No activity logs found.</p>
+        }
+    </div>
 }
