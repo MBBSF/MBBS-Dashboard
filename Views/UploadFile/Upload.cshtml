@@ -1,28 +1,76 @@
-﻿@model             UploadFile
+﻿@model MBBS.Dashboard.web.Models.UploadFile
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewBag.Title = "Upload File";
+    var sources = new List<SelectListItem>
+    {
+        new SelectListItem { Text = "Select Source", Value = "", Selected = true },
+        new SelectListItem { Text = "Coursera", Value = "Coursera" },
+        new SelectListItem { Text = "GoogleForms", Value = "GoogleForms" },
+        new SelectListItem { Text = "Cognito", Value = "Cognito" }
+    };
+}
+
+<h2>Upload File</h2>
 
 @using (Html.BeginForm("Upload", "UploadFile", FormMethod.Post, new { enctype = "multipart/form-data" }))
 {
-
     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-    <div>
-        <label for="Source">Select Data Source:</label>
-        <select asp-for="Source" class="form-control">
-            <option value="">-- Select Source --</option>
-            <option value="Coursera">Coursera</option>
-            <option value="GoogleForms">Google Forms</option>
-            <option value="Cognito">Cognito</option>
-        </select>
-
-    @Html.ValidationMessageFor(model => model.Source, "", new { @class = "text-danger" })
+    <div class="form-group">
+        @Html.LabelFor(m => m.Source)
+        @Html.DropDownListFor(m => m.Source, sources, new { @class = "form-control", id = "sourceSelect" })
     </div>
 
-    <div>
-        <label for="File">Select File:</label>
-        <input type="file" asp-for="File" class="form-control" />
+    <div class="form-group" id="fileTypeGroup" style="display:none;">
+        @Html.Label("File Type")
+        <select id="fileTypeSelect" name="FileType" class="form-control">
+            <option value="">Select File Type</option>
+        </select>
+    </div>
 
-    @Html.ValidationMessageFor(model => model.File, "", new { @class = "text-danger" })
+    <div class="form-group">
+        @Html.LabelFor(m => m.File)
+        <input type="file" name="File" id="fileInput" class="form-control" />
     </div>
 
     <button type="submit" class="btn btn-primary">Upload</button>
+}
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var fileTypeOptions = {
+                "Coursera": [
+                    { value: "specialization-report", text: "Specialization Report" },
+                    { value: "membership-report", text: "Membership Report" },
+                    { value: "pivot-location-city-report", text: "Pivot Location City Report" },
+                    { value: "usage-report", text: "Usage Report" }
+                ],
+                "GoogleForms": [
+                    { value: "mentoring-vital-information", text: "MBBSF Mentoring Volunteer Program Vital Information Assignment Link (Responses)" }
+                ],
+                "Cognito": [
+                    { value: "master-list", text: "MBBSF Master List" }
+                ]
+            };
+
+            $("#sourceSelect").change(function () {
+                var selectedSource = $(this).val();
+                var fileTypeSelect = $("#fileTypeSelect");
+                fileTypeSelect.empty();
+                if (selectedSource && fileTypeOptions[selectedSource]) {
+                    $("#fileTypeGroup").show();
+                    fileTypeSelect.append('<option value="">Select File Type</option>');
+                    $.each(fileTypeOptions[selectedSource], function (index, option) {
+                        fileTypeSelect.append($('<option></option>').val(option.value).text(option.text));
+                    });
+                } else {
+                    $("#fileTypeGroup").hide();
+                }
+            });
+        });
+    </script>
 }

@@ -4,6 +4,7 @@ using MBBS.Dashboard.web.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MBBS.Dashboard.web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250304073501_CourseraMembershipReportDatabaseTable")]
+    partial class CourseraMembershipReportDatabaseTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -279,47 +282,6 @@ namespace MBBS.Dashboard.web.Migrations
                     b.ToTable("ExcelDataCourseraMembershipReports");
                 });
 
-            modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataCourseraPivotLocationCityReport", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal?>("AverageEstimatedLearningHours")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("AverageProgress")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("CurrentLearners")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CurrentMembers")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("DeletedMembers")
-                        .HasColumnType("int");
-
-                    b.Property<string>("LocationCity")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("TotalCompletedCourses")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TotalEnrollments")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("TotalEstimatedLearningHours")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ExcelDataCourseraPivotLocationCityReports");
-                });
-
             modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataCourseraSpecialization", b =>
                 {
                     b.Property<int>("Id")
@@ -405,124 +367,6 @@ namespace MBBS.Dashboard.web.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ExcelDataCourseraSpecialization");
-                });
-
-            modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataCourseraUsageReport", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("ClassEndTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ClassStartTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Completed")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("CompletionTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Course")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CourseCertificateURL")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CourseGrade")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CourseId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CourseSlug")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CourseType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EnrollmentSource")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("EnrollmentTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("EstimatedLearningHours")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ExternalId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ForCredit")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("JobTitle")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("JobType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("LastCourseActivityTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("LocationCity")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LocationCountry")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LocationRegion")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("OverallProgress")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ProgramName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ProgramSlug")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RemovedFromProgram")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("University")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ExcelDataCourseraUsageReports");
                 });
 
             modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataGoogleFormsVolunteerProgram", b =>
