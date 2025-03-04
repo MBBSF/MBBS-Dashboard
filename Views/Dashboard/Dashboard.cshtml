@@ -133,30 +133,54 @@ else
     @if (Model.PlatformData != null)
     {
         <div class="mt-4">
-            <h3>Detailed Platform Data</h3>
+            <h3>Detailed Platform Data</h3>        
             <table class="table table-striped">
                 <thead>
                     <tr>
                         @if (Model.PlatformId == 1)
                         {
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Specialization</th>
-                            <th>Completed</th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Name">Name</a>
+                            </th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Email">Email</a>
+                            </th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Specialization">Specialization</a>
+                            </th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Completed">Completed</a>
+                            </th>
                         }
                         else if (Model.PlatformId == 2)
                         {
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Phone</th>
-                            <th>Intended Major</th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Name_First">First Name</a>
+                            </th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Name_Last">Last Name</a>
+                            </th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Phone">Phone</a>
+                            </th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="IntendedMajor">Intended Major</a>
+                            </th>
                         }
                         else if (Model.PlatformId == 3)
                         {
-                            <th>Mentor</th>
-                            <th>Mentee</th>
-                            <th>Date</th>
-                            <th>Method of Contact</th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Mentor">Mentor</a>
+                            </th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Mentee">Mentee</a>
+                            </th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Date">Date</a>
+                            </th>
+                            <th>
+                                <a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="MethodOfContact">Method of Contact</a>
+                            </th>
                         }
                     </tr>
                 </thead>
