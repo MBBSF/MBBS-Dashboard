@@ -34,11 +34,56 @@ namespace MBBS.Dashboard.web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> ViewDataByPlatform(int platformId)
+        public async Task<IActionResult> ViewDataByPlatform(int platformId, string sortBy, string sortOrder)
         {
             var viewModel = await GetDashboardViewModel();
             viewModel.PlatformId = platformId;
             viewModel.PlatformData = await GetPlatformData(platformId);
+
+            switch (sortBy)
+            {
+                case "Name":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).Name).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).Name).ToList();
+                    break;
+                case "Email":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).Email).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).Email).ToList();
+                    break;
+                case "Specialization":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).Specialization).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).Specialization).ToList();
+                    break;
+                case "Completed":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).Completed).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).Completed).ToList();
+                    break;
+                case "Name_First":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).Name_First).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).Name_First).ToList();
+                    break;
+                case "Name_Last":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).Name_Last).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).Name_Last).ToList();
+                    break;
+                case "Phone":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).Phone).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).Phone).ToList();
+                    break;
+                case "IntendedMajor":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).IntendedMajor).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).IntendedMajor).ToList();
+                    break;
+                case "Mentor":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).Mentor).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).Mentor).ToList();
+                    break;
+                case "Mentee":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).Mentee).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).Mentee).ToList();
+                    break;
+                case "Date":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).Date).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).Date).ToList();
+                    break;
+                case "MethodOfContact":
+                    viewModel.PlatformData = sortOrder == "desc" ? viewModel.PlatformData.OrderBy(p => (p as dynamic).MethodOfContact).ToList() : viewModel.PlatformData.OrderByDescending(p => (p as dynamic).MethodOfContact).ToList();
+                    break;
+                default:
+                    viewModel.PlatformData = viewModel.PlatformData.OrderBy(p => (p as dynamic).Name).ToList();
+                    break;
+            }
+            viewModel.CurrentSortOrder = sortOrder == "asc" ? "desc" : "asc";
+            viewModel.CurrentSortBy = sortBy;
 
             return View("Dashboard", viewModel);
         }
