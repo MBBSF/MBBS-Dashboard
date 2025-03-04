@@ -1,8 +1,13 @@
 @using MBBS.Dashboard.web.Controllers
 @{
     Account acc = AccountController.ActiveAccount;
+    bool isLoggedIn = (acc != null);
+    bool isAdmin = isLoggedIn && acc.UserRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
     string name = "Log In";
-    if (acc != null) name = acc.Username;
+    if (isLoggedIn)
+    {
+        name = acc.Username;
+    }
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -22,43 +27,60 @@
                     <img src="~/images/mbbsf-logo.png" alt="MBBSF Logo" class="navbar-logo">
                     M.B.B.S.F Metrics Dashboard
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
+                        <!-- Always show Home -->
                         <li class="nav-item">
                             <a class="nav-link text-white" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="LogInPage">Log In</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="AccountDetails">Account</a>
-                        </li>
-                        <!-- Only show account management links for Admins -->
-                        @if (acc != null && acc.UserRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+
+                        @if (!isLoggedIn)
                         {
+                            <!-- Not logged in: Only show Log In and FAQ -->
                             <li class="nav-item">
-                                <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="AccountList">Accounts</a>
+                                <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="LogInPage">Log In</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="AccountCreation">Register Account</a>
+                                <a class="nav-link text-white" asp-area="" asp-controller="Faq" asp-action="Faq">FAQ</a>
                             </li>
                         }
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-controller="UploadFile" asp-action="Upload">Upload File</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-controller="Contact" asp-action="Contact">Contact Us</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-controller="Faq" asp-action="Faq">FAQ</a>
-                        </li>
+                        else
+                        {
+                            <!-- Logged in: Show additional links -->
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="AccountDetails">Account</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-area="" asp-controller="UploadFile" asp-action="Upload">Upload File</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-area="" asp-controller="Contact" asp-action="Contact">Contact Us</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-area="" asp-controller="Faq" asp-action="Faq">FAQ</a>
+                            </li>
+                            <!-- Admin-only links -->
+                            @if (isAdmin)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="AccountList">Accounts</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="AccountCreation">Register Account</a>
+                                </li>
+                            }
+                            <!-- Log Out button -->
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="LogOut">Log Out</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
