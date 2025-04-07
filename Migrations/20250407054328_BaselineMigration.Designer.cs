@@ -4,6 +4,7 @@ using MBBS.Dashboard.web.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MBBS.Dashboard.web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250407054328_BaselineMigration")]
+    partial class BaselineMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,7 +45,7 @@ namespace MBBS.Dashboard.web.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ActivityLogs", (string)null);
+                    b.ToTable("ActivityLogs");
                 });
 
             modelBuilder.Entity("MBBS.Dashboard.web.Models.Account", b =>
@@ -79,7 +82,7 @@ namespace MBBS.Dashboard.web.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Accounts", (string)null);
+                    b.ToTable("Accounts");
                 });
 
             modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataCognitoMasterList", b =>
@@ -207,7 +210,7 @@ namespace MBBS.Dashboard.web.Migrations
 
                     b.HasKey("MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id");
 
-                    b.ToTable("ExcelDataCognitoMasterList", (string)null);
+                    b.ToTable("ExcelDataCognitoMasterList");
                 });
 
             modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataCourseraMembershipReport", b =>
@@ -282,7 +285,7 @@ namespace MBBS.Dashboard.web.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExcelDataCourseraMembershipReports", (string)null);
+                    b.ToTable("ExcelDataCourseraMembershipReports");
                 });
 
             modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataCourseraPivotLocationCityReport", b =>
@@ -326,7 +329,7 @@ namespace MBBS.Dashboard.web.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExcelDataCourseraPivotLocationCityReports", (string)null);
+                    b.ToTable("ExcelDataCourseraPivotLocationCityReports");
                 });
 
             modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataCourseraSpecialization", b =>
@@ -416,7 +419,7 @@ namespace MBBS.Dashboard.web.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExcelDataCourseraSpecialization", (string)null);
+                    b.ToTable("ExcelDataCourseraSpecialization");
                 });
 
             modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataCourseraUsageReport", b =>
@@ -537,7 +540,7 @@ namespace MBBS.Dashboard.web.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExcelDataCourseraUsageReports", (string)null);
+                    b.ToTable("ExcelDataCourseraUsageReports");
                 });
 
             modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataGoogleFormsVolunteerProgram", b =>
@@ -579,7 +582,7 @@ namespace MBBS.Dashboard.web.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExcelDataGoogleFormsVolunteerProgram", (string)null);
+                    b.ToTable("ExcelDataGoogleFormsVolunteerProgram");
                 });
 #pragma warning restore 612, 618
         }

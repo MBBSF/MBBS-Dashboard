@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CsvHelper;
 using Microsoft.AspNetCore.Http;
@@ -11,7 +14,7 @@ using CsvHelper.Configuration;
 using MBBS.Dashboard.web.Mappings;
 using MBBS.Dashboard.web.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
+using MBBS.Dashboard.web.Controllers;
 
 public class UploadFileController : Controller
 {
@@ -24,12 +27,33 @@ public class UploadFileController : Controller
 
     private readonly Dictionary<string, List<string>> ExpectedHeaders = new()
     {
-        { "Coursera", new List<string> 
-            { "Name", "Email", "External Id", "Specialization", "Specialization Slug", "University", "Enrollment Time", "Last Specialization Activity Time", "# Completed Courses", "# Courses in Specialization", "Completed", "Removed From Program", "Program Slug", "Program Name", "Enrollment Source", "Specialization Completion Time", "Specialization Certificate URL", "Job Title", "Job Type", "Location City", "Location Region", "Location Country" } },
-        { "Cognito", new List<string> 
-            { "MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id", "Name_First", "Name_Middle", "Name_Last", "Phone", "Age", "Address_Line1", "Address_Line2", "Address_City", "Address_State", "Address_PostalCode", "IntendedMajor", "ExpectedGraduation", "CollegePlanToAttend_Name", "CollegePlanToAttend_CityState", "HighSchoolCollegeData_CurrentStudent", "HighSchoolCollegeData_HighSchoolCollegeInformation", "HighSchoolCollegeData_Phone", "HighSchoolCollegeData_HighSchoolGraduation", "HighSchoolCollegeData_CumulativeGPA", "HighSchoolCollegeData_ACTCompositeScore", "HighSchoolCollegeData_SATCompositeScore", "HighSchoolCollegeData_SchoolCommunityRelatedActivities", "HighSchoolCollegeData_HonorsAndSpecialRecognition", "HighSchoolCollegeData_ExplainYourNeedForAssistance", "WriteYourNameAsFormOfSignature", "Date", "Entry_Status", "Entry_DateCreated", "Entry_DateSubmitted", "Entry_DateUpdated" } },
-        { "GoogleForms", new List<string> 
-            { "Timestamp", "Mentor", "Mentee", "Date", "Time", "Method of Contact", "Comment" } },
+        { "Coursera", new List<string>
+            {
+                "Name", "Email", "External Id", "Specialization", "Specialization Slug", "University",
+                "Enrollment Time", "Last Specialization Activity Time", "# Completed Courses", "# Courses in Specialization",
+                "Completed", "Removed From Program", "Program Slug", "Program Name", "Enrollment Source",
+                "Specialization Completion Time", "Specialization Certificate URL", "Job Title", "Job Type",
+                "Location City", "Location Region", "Location Country"
+            }
+        },
+        { "Cognito", new List<string>
+            {
+                "MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id", "Name_First", "Name_Middle", "Name_Last", "Phone", "Age",
+                "Address_Line1", "Address_Line2", "Address_City", "Address_State", "Address_PostalCode",
+                "IntendedMajor", "ExpectedGraduation", "CollegePlanToAttend_Name", "CollegePlanToAttend_CityState",
+                "HighSchoolCollegeData_CurrentStudent", "HighSchoolCollegeData_HighSchoolCollegeInformation",
+                "HighSchoolCollegeData_Phone", "HighSchoolCollegeData_HighSchoolGraduation", "HighSchoolCollegeData_CumulativeGPA",
+                "HighSchoolCollegeData_ACTCompositeScore", "HighSchoolCollegeData_SATCompositeScore",
+                "HighSchoolCollegeData_SchoolCommunityRelatedActivities", "HighSchoolCollegeData_HonorsAndSpecialRecognition",
+                "HighSchoolCollegeData_ExplainYourNeedForAssistance", "WriteYourNameAsFormOfSignature",
+                "Date", "Entry_Status", "Entry_DateCreated", "Entry_DateSubmitted", "Entry_DateUpdated"
+            }
+        },
+        { "GoogleForms", new List<string>
+            {
+                "Timestamp", "Mentor", "Mentee", "Date", "Time", "Method of Contact", "Comment"
+            }
+        },
         { "Coursera-membership-report", new List<string>
             {
                 "Name", "Email", "External Id", "Program Name", "Program Slug",
@@ -40,35 +64,27 @@ public class UploadFileController : Controller
         },
         { "Coursera-pivot-location-city-report", new List<string>
             {
-                "Location City",
-                "Current Members",
-                "Current Learners",
-                "Total Enrollments",
-                "Total Completed Courses",
-                "Average Progress",
-                "Total Estimated Learning Hours",
-                "Average Estimated Learning Hours",
-                "Deleted Members"
+                "Location City", "Current Members", "Current Learners", "Total Enrollments", "Total Completed Courses",
+                "Average Progress", "Total Estimated Learning Hours", "Average Estimated Learning Hours", "Deleted Members"
             }
         },
         { "Coursera-usage-report", new List<string>
             {
-                "Name", "Email", "External Id", "Course", "Course ID", "Course Slug",
-                "University", "Enrollment Time", "Class Start Time", "Class End Time",
-                "Last Course Activity Time", "Overall Progress", "Estimated Learning Hours",
-                "Completed", "Removed From Program", "Program Slug", "Program Name",
-                "Enrollment Source", "Completion Time", "Course Grade", "Course Certificate URL",
-                "For Credit", "Course Type", "Job Title", "Job Type", "Location City",
-                "Location Region", "Location Country"
+                "Name", "Email", "External Id", "Course", "Course ID", "Course Slug", "University",
+                "Enrollment Time", "Class Start Time", "Class End Time", "Last Course Activity Time", "Overall Progress",
+                "Estimated Learning Hours", "Completed", "Removed From Program", "Program Slug", "Program Name",
+                "Enrollment Source", "Completion Time", "Course Grade", "Course Certificate URL", "For Credit",
+                "Course Type", "Job Title", "Job Type", "Location City", "Location Region", "Location Country"
             }
         }
-
     };
+
     private string NormalizeHeader(string header)
     {
         // Trim the header and replace any sequence of whitespace with a single space.
         return Regex.Replace(header.Trim(), @"\s+", " ");
     }
+
     private async Task<bool> ValidateFileHeaders(IFormFile file, string source, string fileExtension, string fileType = null)
     {
         // Determine the key for ExpectedHeaders.
@@ -197,7 +213,6 @@ public class UploadFileController : Controller
             switch (model.Source)
             {
                 case "Coursera":
-                    // For Coursera, further distinguish based on file extension and file type.
                     switch (fileExtension)
                     {
                         case ".csv":
@@ -257,9 +272,7 @@ public class UploadFileController : Controller
                             return View(model);
                     }
                     break;
-
                 case "GoogleForms":
-                    // Processing for GoogleForms remains unchanged.
                     switch (fileExtension)
                     {
                         case ".csv":
@@ -277,9 +290,7 @@ public class UploadFileController : Controller
                             return View(model);
                     }
                     break;
-
                 case "Cognito":
-                    // Processing for Cognito remains unchanged.
                     switch (fileExtension)
                     {
                         case ".csv":
@@ -297,7 +308,6 @@ public class UploadFileController : Controller
                             return View(model);
                     }
                     break;
-
                 default:
                     ModelState.AddModelError("", "Invalid data source selected.");
                     model.Source = "";
@@ -324,29 +334,33 @@ public class UploadFileController : Controller
         }
     }
 
+    
+
     private async Task<int> ProcessCourseraUsageCsvData(IFormFile file)
     {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
-        var config = new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
             HeaderValidated = null,
             MissingFieldFound = null
         };
 
-        using (var streamReader = new StreamReader(file.OpenReadStream()))
-        using (var csv = new CsvHelper.CsvReader(streamReader, config))
-        {
-            csv.Context.RegisterClassMap<ExcelDataCourseraUsageReportMap>();
-            var dataList = new List<ExcelDataCourseraUsageReport>();
-            var fileKeys = new HashSet<string>();
+        using var streamReader = new StreamReader(file.OpenReadStream());
+        using var csv = new CsvReader(streamReader, config);
+        csv.Context.RegisterClassMap<ExcelDataCourseraUsageReportMap>();
+        var dataList = new List<ExcelDataCourseraUsageReport>();
+        var fileKeys = new HashSet<string>();
 
-            await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraUsageReport>())
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+
+        await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraUsageReport>())
+        {
+            record.AccountId = currentAccountId;
+
+            // Build a composite key from all columns to check duplicates.
+            string key = string.Join("|", new string[]
             {
-                // Build a composite key from all columns to check duplicates.
-                string key = string.Join("|", new string[]
-                {
                 record.Name?.Trim() ?? "",
                 record.Email?.Trim() ?? "",
                 record.ExternalId?.Trim() ?? "",
@@ -374,693 +388,633 @@ public class UploadFileController : Controller
                 record.JobType?.Trim() ?? "",
                 record.LocationCity?.Trim() ?? "",
                 record.LocationRegion?.Trim() ?? "",
-                record.LocationCountry?.Trim() ?? ""
-                });
+                record.LocationCountry?.Trim() ?? "",
+                record.AccountId.ToString()
+            });
 
-                // Check for duplicate within the file.
-                if (!fileKeys.Add(key))
-                {
-                    fileDuplicateCount++;
-                    continue;
-                }
-
-                // Check for duplicate rows in the database by comparing all columns.
-                bool exists = await _context.ExcelDataCourseraUsageReports.AnyAsync(r =>
-                    r.Name == record.Name &&
-                    r.Email == record.Email &&
-                    r.ExternalId == record.ExternalId &&
-                    r.Course == record.Course &&
-                    r.CourseId == record.CourseId &&
-                    r.CourseSlug == record.CourseSlug &&
-                    r.University == record.University &&
-                    r.EnrollmentTime == record.EnrollmentTime &&
-                    r.ClassStartTime == record.ClassStartTime &&
-                    r.ClassEndTime == record.ClassEndTime &&
-                    r.LastCourseActivityTime == record.LastCourseActivityTime &&
-                    r.OverallProgress == record.OverallProgress &&
-                    r.EstimatedLearningHours == record.EstimatedLearningHours &&
-                    r.Completed == record.Completed &&
-                    r.RemovedFromProgram == record.RemovedFromProgram &&
-                    r.ProgramSlug == record.ProgramSlug &&
-                    r.ProgramName == record.ProgramName &&
-                    r.EnrollmentSource == record.EnrollmentSource &&
-                    r.CompletionTime == record.CompletionTime &&
-                    r.CourseGrade == record.CourseGrade &&
-                    r.CourseCertificateURL == record.CourseCertificateURL &&
-                    r.ForCredit == record.ForCredit &&
-                    r.CourseType == record.CourseType &&
-                    r.JobTitle == record.JobTitle &&
-                    r.JobType == record.JobType &&
-                    r.LocationCity == record.LocationCity &&
-                    r.LocationRegion == record.LocationRegion &&
-                    r.LocationCountry == record.LocationCountry
-                );
-
-                if (exists)
-                {
-                    dbDuplicateCount++;
-                }
-                else
-                {
-                    dataList.Add(record);
-                }
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
             }
-            _context.ExcelDataCourseraUsageReports.AddRange(dataList);
-            await _context.SaveChangesAsync();
-            return dbDuplicateCount + fileDuplicateCount;
+
+            bool exists = await _context.ExcelDataCourseraUsageReports.AnyAsync(r =>
+                r.Name == record.Name &&
+                r.Email == record.Email &&
+                r.ExternalId == record.ExternalId &&
+                r.Course == record.Course &&
+                r.CourseId == record.CourseId &&
+                r.CourseSlug == record.CourseSlug &&
+                r.University == record.University &&
+                r.EnrollmentTime == record.EnrollmentTime &&
+                r.ClassStartTime == record.ClassStartTime &&
+                r.ClassEndTime == record.ClassEndTime &&
+                r.LastCourseActivityTime == record.LastCourseActivityTime &&
+                r.OverallProgress == record.OverallProgress &&
+                r.EstimatedLearningHours == record.EstimatedLearningHours &&
+                r.Completed == record.Completed &&
+                r.RemovedFromProgram == record.RemovedFromProgram &&
+                r.ProgramSlug == record.ProgramSlug &&
+                r.ProgramName == record.ProgramName &&
+                r.EnrollmentSource == record.EnrollmentSource &&
+                r.CompletionTime == record.CompletionTime &&
+                r.CourseGrade == record.CourseGrade &&
+                r.CourseCertificateURL == record.CourseCertificateURL &&
+                r.ForCredit == record.ForCredit &&
+                r.CourseType == record.CourseType &&
+                r.JobTitle == record.JobTitle &&
+                r.JobType == record.JobType &&
+                r.LocationCity == record.LocationCity &&
+                r.LocationRegion == record.LocationRegion &&
+                r.LocationCountry == record.LocationCountry &&
+                r.AccountId == currentAccountId
+            );
+
+            if (exists)
+                dbDuplicateCount++;
+            else
+                dataList.Add(record);
         }
+
+        _context.ExcelDataCourseraUsageReports.AddRange(dataList);
+        await _context.SaveChangesAsync();
+        return dbDuplicateCount + fileDuplicateCount;
     }
 
     private async Task<int> ProcessCourseraUsageXlsxData(IFormFile file)
     {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
         OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
 
-        using (var stream = new MemoryStream())
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+        using var package = new ExcelPackage(stream);
+        var worksheet = package.Workbook.Worksheets[0];
+        int rowCount = worksheet.Dimension.Rows;
+        var dataList = new List<ExcelDataCourseraUsageReport>();
+        var fileKeys = new HashSet<string>();
+
+        for (int row = 2; row <= rowCount; row++)
         {
-            await file.CopyToAsync(stream);
-            using (var package = new OfficeOpenXml.ExcelPackage(stream))
+            var record = new ExcelDataCourseraUsageReport
             {
-                var worksheet = package.Workbook.Worksheets[0];
-                int rowCount = worksheet.Dimension.Rows;
-                var dataList = new List<ExcelDataCourseraUsageReport>();
-                var fileKeys = new HashSet<string>();
+                Name = worksheet.Cells[row, 1].Text,
+                Email = worksheet.Cells[row, 2].Text,
+                ExternalId = worksheet.Cells[row, 3].Text,
+                Course = worksheet.Cells[row, 4].Text,
+                CourseId = worksheet.Cells[row, 5].Text,
+                CourseSlug = worksheet.Cells[row, 6].Text,
+                University = worksheet.Cells[row, 7].Text,
+                EnrollmentTime = DateTime.TryParse(worksheet.Cells[row, 8].Text, out var enrollmentTime) ? enrollmentTime : (DateTime?)null,
+                ClassStartTime = DateTime.TryParse(worksheet.Cells[row, 9].Text, out var classStart) ? classStart : (DateTime?)null,
+                ClassEndTime = DateTime.TryParse(worksheet.Cells[row, 10].Text, out var classEnd) ? classEnd : (DateTime?)null,
+                LastCourseActivityTime = DateTime.TryParse(worksheet.Cells[row, 11].Text, out var lastActivity) ? lastActivity : (DateTime?)null,
+                OverallProgress = decimal.TryParse(worksheet.Cells[row, 12].Text, out var overallProgress) ? overallProgress : (decimal?)null,
+                EstimatedLearningHours = decimal.TryParse(worksheet.Cells[row, 13].Text, out var estHours) ? estHours : (decimal?)null,
+                Completed = worksheet.Cells[row, 14].Text,
+                RemovedFromProgram = worksheet.Cells[row, 15].Text,
+                ProgramSlug = worksheet.Cells[row, 16].Text,
+                ProgramName = worksheet.Cells[row, 17].Text,
+                EnrollmentSource = worksheet.Cells[row, 18].Text,
+                CompletionTime = DateTime.TryParse(worksheet.Cells[row, 19].Text, out var completionTime) ? completionTime : (DateTime?)null,
+                CourseGrade = worksheet.Cells[row, 20].Text,
+                CourseCertificateURL = worksheet.Cells[row, 21].Text,
+                ForCredit = worksheet.Cells[row, 22].Text,
+                CourseType = worksheet.Cells[row, 23].Text,
+                JobTitle = worksheet.Cells[row, 24].Text,
+                JobType = worksheet.Cells[row, 25].Text,
+                LocationCity = worksheet.Cells[row, 26].Text,
+                LocationRegion = worksheet.Cells[row, 27].Text,
+                LocationCountry = worksheet.Cells[row, 28].Text,
+                AccountId = currentAccountId
+            };
 
-                // Assuming row 1 contains headers; process rows starting from row 2.
-                for (int row = 2; row <= rowCount; row++)
-                {
-                    var record = new ExcelDataCourseraUsageReport
-                    {
-                        Name = worksheet.Cells[row, 1].Text,
-                        Email = worksheet.Cells[row, 2].Text,
-                        ExternalId = worksheet.Cells[row, 3].Text,
-                        Course = worksheet.Cells[row, 4].Text,
-                        CourseId = worksheet.Cells[row, 5].Text,
-                        CourseSlug = worksheet.Cells[row, 6].Text,
-                        University = worksheet.Cells[row, 7].Text,
-                        EnrollmentTime = DateTime.TryParse(worksheet.Cells[row, 8].Text, out var enrollmentTime) ? enrollmentTime : (DateTime?)null,
-                        ClassStartTime = DateTime.TryParse(worksheet.Cells[row, 9].Text, out var classStart) ? classStart : (DateTime?)null,
-                        ClassEndTime = DateTime.TryParse(worksheet.Cells[row, 10].Text, out var classEnd) ? classEnd : (DateTime?)null,
-                        LastCourseActivityTime = DateTime.TryParse(worksheet.Cells[row, 11].Text, out var lastActivity) ? lastActivity : (DateTime?)null,
-                        OverallProgress = decimal.TryParse(worksheet.Cells[row, 12].Text, out var overallProgress) ? overallProgress : (decimal?)null,
-                        EstimatedLearningHours = decimal.TryParse(worksheet.Cells[row, 13].Text, out var estHours) ? estHours : (decimal?)null,
-                        Completed = worksheet.Cells[row, 14].Text,
-                        RemovedFromProgram = worksheet.Cells[row, 15].Text,
-                        ProgramSlug = worksheet.Cells[row, 16].Text,
-                        ProgramName = worksheet.Cells[row, 17].Text,
-                        EnrollmentSource = worksheet.Cells[row, 18].Text,
-                        CompletionTime = DateTime.TryParse(worksheet.Cells[row, 19].Text, out var completionTime) ? completionTime : (DateTime?)null,
-                        CourseGrade = worksheet.Cells[row, 20].Text,
-                        CourseCertificateURL = worksheet.Cells[row, 21].Text,
-                        ForCredit = worksheet.Cells[row, 22].Text,
-                        CourseType = worksheet.Cells[row, 23].Text,
-                        JobTitle = worksheet.Cells[row, 24].Text,
-                        JobType = worksheet.Cells[row, 25].Text,
-                        LocationCity = worksheet.Cells[row, 26].Text,
-                        LocationRegion = worksheet.Cells[row, 27].Text,
-                        LocationCountry = worksheet.Cells[row, 28].Text
-                    };
+            string key = string.Join("|", new string[]
+            {
+                record.Name?.Trim() ?? "",
+                record.Email?.Trim() ?? "",
+                record.ExternalId?.Trim() ?? "",
+                record.Course?.Trim() ?? "",
+                record.CourseId?.Trim() ?? "",
+                record.CourseSlug?.Trim() ?? "",
+                record.University?.Trim() ?? "",
+                record.EnrollmentTime?.ToString("o") ?? "",
+                record.ClassStartTime?.ToString("o") ?? "",
+                record.ClassEndTime?.ToString("o") ?? "",
+                record.LastCourseActivityTime?.ToString("o") ?? "",
+                record.OverallProgress?.ToString() ?? "",
+                record.EstimatedLearningHours?.ToString() ?? "",
+                record.Completed?.Trim() ?? "",
+                record.RemovedFromProgram?.Trim() ?? "",
+                record.ProgramSlug?.Trim() ?? "",
+                record.ProgramName?.Trim() ?? "",
+                record.EnrollmentSource?.Trim() ?? "",
+                record.CompletionTime?.ToString("o") ?? "",
+                record.CourseGrade?.Trim() ?? "",
+                record.CourseCertificateURL?.Trim() ?? "",
+                record.ForCredit?.Trim() ?? "",
+                record.CourseType?.Trim() ?? "",
+                record.JobTitle?.Trim() ?? "",
+                record.JobType?.Trim() ?? "",
+                record.LocationCity?.Trim() ?? "",
+                record.LocationRegion?.Trim() ?? "",
+                record.LocationCountry?.Trim() ?? "",
+                record.AccountId.ToString()
+            });
 
-                    // Build a composite key from all columns.
-                    string key = string.Join("|", new string[]
-                    {
-                    record.Name?.Trim() ?? "",
-                    record.Email?.Trim() ?? "",
-                    record.ExternalId?.Trim() ?? "",
-                    record.Course?.Trim() ?? "",
-                    record.CourseId?.Trim() ?? "",
-                    record.CourseSlug?.Trim() ?? "",
-                    record.University?.Trim() ?? "",
-                    record.EnrollmentTime?.ToString("o") ?? "",
-                    record.ClassStartTime?.ToString("o") ?? "",
-                    record.ClassEndTime?.ToString("o") ?? "",
-                    record.LastCourseActivityTime?.ToString("o") ?? "",
-                    record.OverallProgress?.ToString() ?? "",
-                    record.EstimatedLearningHours?.ToString() ?? "",
-                    record.Completed?.Trim() ?? "",
-                    record.RemovedFromProgram?.Trim() ?? "",
-                    record.ProgramSlug?.Trim() ?? "",
-                    record.ProgramName?.Trim() ?? "",
-                    record.EnrollmentSource?.Trim() ?? "",
-                    record.CompletionTime?.ToString("o") ?? "",
-                    record.CourseGrade?.Trim() ?? "",
-                    record.CourseCertificateURL?.Trim() ?? "",
-                    record.ForCredit?.Trim() ?? "",
-                    record.CourseType?.Trim() ?? "",
-                    record.JobTitle?.Trim() ?? "",
-                    record.JobType?.Trim() ?? "",
-                    record.LocationCity?.Trim() ?? "",
-                    record.LocationRegion?.Trim() ?? "",
-                    record.LocationCountry?.Trim() ?? ""
-                    });
-
-                    // Check for duplicates within the file.
-                    if (!fileKeys.Add(key))
-                    {
-                        fileDuplicateCount++;
-                        continue;
-                    }
-
-                    // Check for duplicates in the database by comparing all columns.
-                    bool exists = await _context.ExcelDataCourseraUsageReports.AnyAsync(r =>
-                        r.Name == record.Name &&
-                        r.Email == record.Email &&
-                        r.ExternalId == record.ExternalId &&
-                        r.Course == record.Course &&
-                        r.CourseId == record.CourseId &&
-                        r.CourseSlug == record.CourseSlug &&
-                        r.University == record.University &&
-                        r.EnrollmentTime == record.EnrollmentTime &&
-                        r.ClassStartTime == record.ClassStartTime &&
-                        r.ClassEndTime == record.ClassEndTime &&
-                        r.LastCourseActivityTime == record.LastCourseActivityTime &&
-                        r.OverallProgress == record.OverallProgress &&
-                        r.EstimatedLearningHours == record.EstimatedLearningHours &&
-                        r.Completed == record.Completed &&
-                        r.RemovedFromProgram == record.RemovedFromProgram &&
-                        r.ProgramSlug == record.ProgramSlug &&
-                        r.ProgramName == record.ProgramName &&
-                        r.EnrollmentSource == record.EnrollmentSource &&
-                        r.CompletionTime == record.CompletionTime &&
-                        r.CourseGrade == record.CourseGrade &&
-                        r.CourseCertificateURL == record.CourseCertificateURL &&
-                        r.ForCredit == record.ForCredit &&
-                        r.CourseType == record.CourseType &&
-                        r.JobTitle == record.JobTitle &&
-                        r.JobType == record.JobType &&
-                        r.LocationCity == record.LocationCity &&
-                        r.LocationRegion == record.LocationRegion &&
-                        r.LocationCountry == record.LocationCountry
-                    );
-
-                    if (exists)
-                    {
-                        dbDuplicateCount++;
-                    }
-                    else
-                    {
-                        dataList.Add(record);
-                    }
-                }
-
-                _context.ExcelDataCourseraUsageReports.AddRange(dataList);
-                await _context.SaveChangesAsync();
-                return dbDuplicateCount + fileDuplicateCount;
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
             }
+
+            bool exists = await _context.ExcelDataCourseraUsageReports.AnyAsync(r =>
+                r.Name == record.Name &&
+                r.Email == record.Email &&
+                r.ExternalId == record.ExternalId &&
+                r.Course == record.Course &&
+                r.CourseId == record.CourseId &&
+                r.CourseSlug == record.CourseSlug &&
+                r.University == record.University &&
+                r.EnrollmentTime == record.EnrollmentTime &&
+                r.ClassStartTime == record.ClassStartTime &&
+                r.ClassEndTime == record.ClassEndTime &&
+                r.LastCourseActivityTime == record.LastCourseActivityTime &&
+                r.OverallProgress == record.OverallProgress &&
+                r.EstimatedLearningHours == record.EstimatedLearningHours &&
+                r.Completed == record.Completed &&
+                r.RemovedFromProgram == record.RemovedFromProgram &&
+                r.ProgramSlug == record.ProgramSlug &&
+                r.ProgramName == record.ProgramName &&
+                r.EnrollmentSource == record.EnrollmentSource &&
+                r.CompletionTime == record.CompletionTime &&
+                r.CourseGrade == record.CourseGrade &&
+                r.CourseCertificateURL == record.CourseCertificateURL &&
+                r.ForCredit == record.ForCredit &&
+                r.CourseType == record.CourseType &&
+                r.JobTitle == record.JobTitle &&
+                r.JobType == record.JobType &&
+                r.LocationCity == record.LocationCity &&
+                r.LocationRegion == record.LocationRegion &&
+                r.LocationCountry == record.LocationCountry &&
+                r.AccountId == currentAccountId
+            );
+
+            if (exists)
+                dbDuplicateCount++;
+            else
+                dataList.Add(record);
         }
+
+        _context.ExcelDataCourseraUsageReports.AddRange(dataList);
+        await _context.SaveChangesAsync();
+        return dbDuplicateCount + fileDuplicateCount;
     }
 
     private async Task<int> ProcessCourseraPivotLocationCityCsvData(IFormFile file)
     {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
-        var config = new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
             HeaderValidated = null,
             MissingFieldFound = null
         };
 
-        using (var streamReader = new StreamReader(file.OpenReadStream()))
-        using (var csv = new CsvHelper.CsvReader(streamReader, config))
+        using var streamReader = new StreamReader(file.OpenReadStream());
+        using var csv = new CsvReader(streamReader, config);
+        csv.Context.RegisterClassMap<ExcelDataCourseraPivotLocationCityReportMap>();
+        var dataList = new List<ExcelDataCourseraPivotLocationCityReport>();
+        var fileKeys = new HashSet<string>();
+
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+
+        await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraPivotLocationCityReport>())
         {
-            csv.Context.RegisterClassMap<ExcelDataCourseraPivotLocationCityReportMap>();
-            var dataList = new List<ExcelDataCourseraPivotLocationCityReport>();
-            var fileKeys = new HashSet<string>();
-
-            await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraPivotLocationCityReport>())
+            record.AccountId = currentAccountId;
+            string key = record.LocationCity?.Trim();
+            if (!fileKeys.Add(key))
             {
-                // Create a key based on Location City (or add additional fields if needed)
-                string key = record.LocationCity?.Trim();
-                if (!fileKeys.Add(key))
-                {
-                    fileDuplicateCount++;
-                    continue;
-                }
-
-                bool exists = await _context.ExcelDataCourseraPivotLocationCityReports.AnyAsync(r =>
-                    r.LocationCity == record.LocationCity);
-
-                if (!exists)
-                {
-                    dataList.Add(record);
-                }
-                else
-                {
-                    dbDuplicateCount++;
-                }
+                fileDuplicateCount++;
+                continue;
             }
-            _context.ExcelDataCourseraPivotLocationCityReports.AddRange(dataList);
-            await _context.SaveChangesAsync();
+
+            bool exists = await _context.ExcelDataCourseraPivotLocationCityReports.AnyAsync(r =>
+                r.LocationCity == record.LocationCity &&
+                r.AccountId == currentAccountId
+            );
+            if (!exists)
+                dataList.Add(record);
+            else
+                dbDuplicateCount++;
         }
+
+        _context.ExcelDataCourseraPivotLocationCityReports.AddRange(dataList);
+        await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
     }
 
     private async Task<int> ProcessCourseraPivotLocationCityXlsxData(IFormFile file)
     {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
         OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
 
-        using (var stream = new MemoryStream())
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+        using var package = new ExcelPackage(stream);
+        var worksheet = package.Workbook.Worksheets[0]; // Assume row 1 contains headers; start from row 2.
+        int rowCount = worksheet.Dimension.Rows;
+        var dataList = new List<ExcelDataCourseraPivotLocationCityReport>();
+        var fileKeys = new HashSet<string>();
+
+        for (int row = 2; row <= rowCount; row++)
         {
-            await file.CopyToAsync(stream);
-            using (var package = new OfficeOpenXml.ExcelPackage(stream))
+            var record = new ExcelDataCourseraPivotLocationCityReport
             {
-                var worksheet = package.Workbook.Worksheets[0];
-                int rowCount = worksheet.Dimension.Rows;
-                var dataList = new List<ExcelDataCourseraPivotLocationCityReport>();
-                var fileKeys = new HashSet<string>();
+                LocationCity = worksheet.Cells[row, 1].Text,
+                CurrentMembers = int.TryParse(worksheet.Cells[row, 2].Text, out var currentMembers) ? currentMembers : (int?)null,
+                CurrentLearners = int.TryParse(worksheet.Cells[row, 3].Text, out var currentLearners) ? currentLearners : (int?)null,
+                TotalEnrollments = int.TryParse(worksheet.Cells[row, 4].Text, out var totalEnrollments) ? totalEnrollments : (int?)null,
+                TotalCompletedCourses = int.TryParse(worksheet.Cells[row, 5].Text, out var totalCompleted) ? totalCompleted : (int?)null,
+                AverageProgress = decimal.TryParse(worksheet.Cells[row, 6].Text, out var avgProgress) ? avgProgress : (decimal?)null,
+                TotalEstimatedLearningHours = decimal.TryParse(worksheet.Cells[row, 7].Text, out var totalEstHours) ? totalEstHours : (decimal?)null,
+                AverageEstimatedLearningHours = decimal.TryParse(worksheet.Cells[row, 8].Text, out var avgEstHours) ? avgEstHours : (decimal?)null,
+                DeletedMembers = int.TryParse(worksheet.Cells[row, 9].Text, out var deletedMembers) ? deletedMembers : (int?)null,
+                AccountId = currentAccountId
+            };
 
-                // Assume row 1 contains headers; start from row 2.
-                for (int row = 2; row <= rowCount; row++)
-                {
-                    var record = new ExcelDataCourseraPivotLocationCityReport
-                    {
-                        LocationCity = worksheet.Cells[row, 1].Text,
-                        CurrentMembers = int.TryParse(worksheet.Cells[row, 2].Text, out var currentMembers) ? currentMembers : (int?)null,
-                        CurrentLearners = int.TryParse(worksheet.Cells[row, 3].Text, out var currentLearners) ? currentLearners : (int?)null,
-                        TotalEnrollments = int.TryParse(worksheet.Cells[row, 4].Text, out var totalEnrollments) ? totalEnrollments : (int?)null,
-                        TotalCompletedCourses = int.TryParse(worksheet.Cells[row, 5].Text, out var totalCompleted) ? totalCompleted : (int?)null,
-                        AverageProgress = decimal.TryParse(worksheet.Cells[row, 6].Text, out var avgProgress) ? avgProgress : (decimal?)null,
-                        TotalEstimatedLearningHours = decimal.TryParse(worksheet.Cells[row, 7].Text, out var totalEstHours) ? totalEstHours : (decimal?)null,
-                        AverageEstimatedLearningHours = decimal.TryParse(worksheet.Cells[row, 8].Text, out var avgEstHours) ? avgEstHours : (decimal?)null,
-                        DeletedMembers = int.TryParse(worksheet.Cells[row, 9].Text, out var deletedMembers) ? deletedMembers : (int?)null,
-                    };
-
-                    string key = record.LocationCity?.Trim();
-                    if (!fileKeys.Add(key))
-                    {
-                        fileDuplicateCount++;
-                        continue;
-                    }
-
-                    bool exists = await _context.ExcelDataCourseraPivotLocationCityReports.AnyAsync(r =>
-                        r.LocationCity == record.LocationCity);
-
-                    if (!exists)
-                    {
-                        dataList.Add(record);
-                    }
-                    else
-                    {
-                        dbDuplicateCount++;
-                    }
-                }
-                _context.ExcelDataCourseraPivotLocationCityReports.AddRange(dataList);
-                await _context.SaveChangesAsync();
+            string key = record.LocationCity?.Trim();
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
             }
+
+            bool exists = await _context.ExcelDataCourseraPivotLocationCityReports.AnyAsync(r =>
+                r.LocationCity == record.LocationCity &&
+                r.AccountId == currentAccountId
+            );
+            if (!exists)
+                dataList.Add(record);
+            else
+                dbDuplicateCount++;
         }
+
+        _context.ExcelDataCourseraPivotLocationCityReports.AddRange(dataList);
+        await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
     }
 
     private async Task<int> ProcessCourseraMembershipCsvData(IFormFile file)
     {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
-        var config = new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
             HeaderValidated = null,
             MissingFieldFound = null
         };
 
-        using (var streamReader = new StreamReader(file.OpenReadStream()))
-        using (var csv = new CsvHelper.CsvReader(streamReader, config))
+        using var streamReader = new StreamReader(file.OpenReadStream());
+        using var csv = new CsvReader(streamReader, config);
+        csv.Context.RegisterClassMap<ExcelDataCourseraMembershipReportMap>();
+        var dataList = new List<ExcelDataCourseraMembershipReport>();
+        var fileKeys = new HashSet<string>();
+
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+
+        await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraMembershipReport>())
         {
-            csv.Context.RegisterClassMap<ExcelDataCourseraMembershipReportMap>();
-            var dataList = new List<ExcelDataCourseraMembershipReport>();
-            var fileKeys = new HashSet<string>();
-
-            await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraMembershipReport>())
+            record.AccountId = currentAccountId;
+            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}|{record.AccountId}";
+            if (!fileKeys.Add(key))
             {
-                // Generate a unique key based on Email and ExternalId.
-                string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
-                if (!fileKeys.Add(key))
-                {
-                    fileDuplicateCount++;
-                    continue;
-                }
-
-                bool exists = await _context.ExcelDataCourseraMembershipReports.AnyAsync(r =>
-                    r.Email == record.Email &&
-                    (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId));
-
-                if (!exists)
-                {
-                    dataList.Add(record);
-                }
-                else
-                {
-                    dbDuplicateCount++;
-                }
+                fileDuplicateCount++;
+                continue;
             }
-            _context.ExcelDataCourseraMembershipReports.AddRange(dataList);
-            await _context.SaveChangesAsync();
+
+            bool exists = await _context.ExcelDataCourseraMembershipReports.AnyAsync(r =>
+                r.Email == record.Email &&
+                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId) &&
+                r.AccountId == currentAccountId
+            );
+            if (!exists)
+                dataList.Add(record);
+            else
+                dbDuplicateCount++;
         }
+
+        _context.ExcelDataCourseraMembershipReports.AddRange(dataList);
+        await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
     }
 
     private async Task<int> ProcessCourseraMembershipXlsxData(IFormFile file)
     {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
         OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
 
-        using (var stream = new MemoryStream())
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+        using var package = new ExcelPackage(stream);
+        var worksheet = package.Workbook.Worksheets[0];
+        int rowCount = worksheet.Dimension.Rows;
+        var dataList = new List<ExcelDataCourseraMembershipReport>();
+        var fileKeys = new HashSet<string>();
+
+        for (int row = 2; row <= rowCount; row++)
         {
-            await file.CopyToAsync(stream);
-            using (var package = new OfficeOpenXml.ExcelPackage(stream))
+            var record = new ExcelDataCourseraMembershipReport
             {
-                var worksheet = package.Workbook.Worksheets[0];
-                int rowCount = worksheet.Dimension.Rows;
-                var dataList = new List<ExcelDataCourseraMembershipReport>();
-                var fileKeys = new HashSet<string>();
+                Name = worksheet.Cells[row, 1].Text,
+                Email = worksheet.Cells[row, 2].Text,
+                ExternalId = worksheet.Cells[row, 3].Text,
+                ProgramName = worksheet.Cells[row, 4].Text,
+                ProgramSlug = worksheet.Cells[row, 5].Text,
+                EnrolledCourses = int.TryParse(worksheet.Cells[row, 6].Text, out var enrolledCourses) ? enrolledCourses : (int?)null,
+                CompletedCourses = int.TryParse(worksheet.Cells[row, 7].Text, out var completedCourses) ? completedCourses : (int?)null,
+                MemberState = worksheet.Cells[row, 8].Text,
+                JoinDate = DateTime.TryParse(worksheet.Cells[row, 9].Text, out var joinDate) ? joinDate : (DateTime?)null,
+                InvitationDate = DateTime.TryParse(worksheet.Cells[row, 10].Text, out var invitationDate) ? invitationDate : (DateTime?)null,
+                LatestProgramActivityDate = DateTime.TryParse(worksheet.Cells[row, 11].Text, out var latestActivityDate) ? latestActivityDate : (DateTime?)null,
+                JobTitle = worksheet.Cells[row, 12].Text,
+                JobType = worksheet.Cells[row, 13].Text,
+                LocationCity = worksheet.Cells[row, 14].Text,
+                LocationRegion = worksheet.Cells[row, 15].Text,
+                LocationCountry = worksheet.Cells[row, 16].Text,
+                AccountId = currentAccountId
+            };
 
-                // Assuming row 1 contains headers; start from row 2.
-                for (int row = 2; row <= rowCount; row++)
-                {
-                    var record = new ExcelDataCourseraMembershipReport
-                    {
-                        Name = worksheet.Cells[row, 1].Text,
-                        Email = worksheet.Cells[row, 2].Text,
-                        ExternalId = worksheet.Cells[row, 3].Text,
-                        ProgramName = worksheet.Cells[row, 4].Text,
-                        ProgramSlug = worksheet.Cells[row, 5].Text,
-                        EnrolledCourses = int.TryParse(worksheet.Cells[row, 6].Text, out var enrolledCourses) ? enrolledCourses : (int?)null,
-                        CompletedCourses = int.TryParse(worksheet.Cells[row, 7].Text, out var completedCourses) ? completedCourses : (int?)null,
-                        MemberState = worksheet.Cells[row, 8].Text,
-                        JoinDate = DateTime.TryParse(worksheet.Cells[row, 9].Text, out var joinDate) ? joinDate : (DateTime?)null,
-                        InvitationDate = DateTime.TryParse(worksheet.Cells[row, 10].Text, out var invitationDate) ? invitationDate : (DateTime?)null,
-                        LatestProgramActivityDate = DateTime.TryParse(worksheet.Cells[row, 11].Text, out var latestActivityDate) ? latestActivityDate : (DateTime?)null,
-                        JobTitle = worksheet.Cells[row, 12].Text,
-                        JobType = worksheet.Cells[row, 13].Text,
-                        LocationCity = worksheet.Cells[row, 14].Text,
-                        LocationRegion = worksheet.Cells[row, 15].Text,
-                        LocationCountry = worksheet.Cells[row, 16].Text
-                    };
-
-                    string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
-                    if (!fileKeys.Add(key))
-                    {
-                        fileDuplicateCount++;
-                        continue;
-                    }
-
-                    bool exists = await _context.ExcelDataCourseraMembershipReports.AnyAsync(r =>
-                        r.Email == record.Email &&
-                        (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId));
-
-                    if (!exists)
-                    {
-                        dataList.Add(record);
-                    }
-                    else
-                    {
-                        dbDuplicateCount++;
-                    }
-                }
-                _context.ExcelDataCourseraMembershipReports.AddRange(dataList);
-                await _context.SaveChangesAsync();
-            }
-        }
-        return dbDuplicateCount + fileDuplicateCount;
-    }
-
-    private async Task<int> ProcessCourseraSpecializationCsvData(IFormFile file)
-    {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
-        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-        {
-            HasHeaderRecord = true,
-            HeaderValidated = null,
-            MissingFieldFound = null
-        };
-
-        using (var streamReader = new StreamReader(file.OpenReadStream()))
-        using (var csv = new CsvReader(streamReader, config))
-        {
-            csv.Context.RegisterClassMap<ExcelDataCourseraSpecializationMap>();
-            var dataList = new List<ExcelDataCourseraSpecialization>();
-            var fileKeys = new HashSet<string>();
-
-            await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraSpecialization>())
+            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}|{record.AccountId}";
+            if (!fileKeys.Add(key))
             {
-                // Set default values if needed
-                record.EnrollmentSource ??= "Unknown";
-                record.ProgramName ??= "Not Specified";
-                record.LocationRegion ??= "Not Specified";
-
-                // Generate a unique key based on Email and ExternalId (if available)
-                string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
-                if (!fileKeys.Add(key))
-                {
-                    // Duplicate within the file
-                    fileDuplicateCount++;
-                    continue;
-                }
-
-                // Check for duplicates in the database
-                bool exists = await _context.ExcelDataCourseraSpecialization.AnyAsync(r =>
-                    r.Email == record.Email &&
-                    (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId));
-                if (!exists)
-                {
-                    dataList.Add(record);
-                }
-                else
-                {
-                    dbDuplicateCount++;
-                }
+                fileDuplicateCount++;
+                continue;
             }
 
-            _context.ExcelDataCourseraSpecialization.AddRange(dataList);
-            await _context.SaveChangesAsync();
+            bool exists = await _context.ExcelDataCourseraMembershipReports.AnyAsync(r =>
+                r.Email == record.Email &&
+                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId) &&
+                r.AccountId == currentAccountId
+            );
+            if (!exists)
+                dataList.Add(record);
+            else
+                dbDuplicateCount++;
         }
 
-        return dbDuplicateCount + fileDuplicateCount;
-    }
-    private async Task<int> ProcessCognitoMasterListCsvData(IFormFile file)
-    {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
-        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-        {
-            HasHeaderRecord = true,
-            HeaderValidated = null,
-            MissingFieldFound = null
-        };
-
-        using (var streamReader = new StreamReader(file.OpenReadStream()))
-        using (var csv = new CsvReader(streamReader, config))
-        {
-            csv.Context.RegisterClassMap<ExcelDataCognitoMasterListMap>();
-            var dataList = new List<ExcelDataCognitoMasterList>();
-            var fileKeys = new HashSet<string>();
-
-            await foreach (var record in csv.GetRecordsAsync<ExcelDataCognitoMasterList>())
-            {
-                record.Name_Middle ??= "Not Provided";
-                record.Address_Line2 ??= "N/A";
-
-                // Generate a unique key based on Name_First, Name_Last, and Phone
-                string key = $"{record.Name_First?.Trim()}|{record.Name_Last?.Trim()}|{record.Phone?.Trim()}";
-                if (!fileKeys.Add(key))
-                {
-                    fileDuplicateCount++;
-                    continue;
-                }
-
-                bool exists = await _context.ExcelDataCognitoMasterList.AnyAsync(r =>
-                    r.Name_First == record.Name_First &&
-                    r.Name_Last == record.Name_Last &&
-                    r.Phone == record.Phone);
-                if (!exists)
-                {
-                    dataList.Add(record);
-                }
-                else
-                {
-                    dbDuplicateCount++;
-                }
-            }
-
-            _context.ExcelDataCognitoMasterList.AddRange(dataList);
-            await _context.SaveChangesAsync();
-        }
-
+        _context.ExcelDataCourseraMembershipReports.AddRange(dataList);
+        await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
     }
     private async Task<int> ProcessCourseraSpecializationXlsxData(IFormFile file)
     {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
-        using (var stream = new MemoryStream())
+        // Get the current user's AccountId.
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+        using var package = new ExcelPackage(stream);
+        var worksheet = package.Workbook.Worksheets[0];
+        int rowCount = worksheet.Dimension.Rows;
+        var dataList = new List<ExcelDataCourseraSpecialization>();
+        var fileKeys = new HashSet<string>();
+
+        // Assuming row 1 contains headers, start from row 2.
+        for (int row = 2; row <= rowCount; row++)
         {
-            await file.CopyToAsync(stream);
-            using (var package = new ExcelPackage(stream))
+            var record = new ExcelDataCourseraSpecialization
             {
-                var worksheet = package.Workbook.Worksheets[0]; // Assume data is in the first worksheet
-                int rowCount = worksheet.Dimension.Rows;
-                var dataList = new List<ExcelDataCourseraSpecialization>();
-                var fileKeys = new HashSet<string>();
+                Name = worksheet.Cells[row, 1].Text,
+                Email = worksheet.Cells[row, 2].Text,
+                ExternalId = worksheet.Cells[row, 3].Text,
+                Specialization = worksheet.Cells[row, 4].Text,
+                SpecializationSlug = worksheet.Cells[row, 5].Text,
+                University = worksheet.Cells[row, 6].Text,
+                EnrollmentTime = DateTime.TryParse(worksheet.Cells[row, 7].Text, out var enrollmentTime)
+                                    ? enrollmentTime : (DateTime?)null,
+                LastSpecializationActivityTime = DateTime.TryParse(worksheet.Cells[row, 8].Text, out var lastActivity)
+                                    ? lastActivity : (DateTime?)null,
+                CompletedCourses = int.TryParse(worksheet.Cells[row, 9].Text, out var completedCourses)
+                                    ? completedCourses : (int?)null,
+                CoursesInSpecialization = int.TryParse(worksheet.Cells[row, 10].Text, out var coursesInSpec)
+                                    ? coursesInSpec : (int?)null,
+                Completed = worksheet.Cells[row, 11].Text,
+                RemovedFromProgram = worksheet.Cells[row, 12].Text,
+                ProgramSlug = worksheet.Cells[row, 13].Text,
+                ProgramName = worksheet.Cells[row, 14].Text,
+                EnrollmentSource = worksheet.Cells[row, 15].Text,
+                SpecializationCompletionTime = DateTime.TryParse(worksheet.Cells[row, 16].Text, out var specCompletion)
+                                    ? specCompletion : (DateTime?)null,
+                SpecializationCertificateURL = worksheet.Cells[row, 17].Text,
+                JobTitle = worksheet.Cells[row, 18].Text,
+                JobType = worksheet.Cells[row, 19].Text,
+                LocationCity = worksheet.Cells[row, 20].Text,
+                LocationRegion = worksheet.Cells[row, 21].Text,
+                LocationCountry = worksheet.Cells[row, 22].Text,
+                AccountId = currentAccountId
+            };
 
-                // Start from row 2 (assuming row 1 contains headers)
-                for (int row = 2; row <= rowCount; row++)
-                {
-                    var record = new ExcelDataCourseraSpecialization
-                    {
-                        Name = worksheet.Cells[row, 1].Text,
-                        Email = worksheet.Cells[row, 2].Text,
-                        ExternalId = worksheet.Cells[row, 3].Text,
-                        Specialization = worksheet.Cells[row, 4].Text,
-                        SpecializationSlug = worksheet.Cells[row, 5].Text,
-                        University = worksheet.Cells[row, 6].Text,
-                        EnrollmentTime = DateTime.TryParse(worksheet.Cells[row, 7].Text, out var enrollmentTime)
-                            ? enrollmentTime : (DateTime?)null,
-                        LastSpecializationActivityTime = DateTime.TryParse(worksheet.Cells[row, 8].Text, out var lastActivityTime)
-                            ? lastActivityTime : (DateTime?)null,
-                        CompletedCourses = int.TryParse(worksheet.Cells[row, 9].Text, out var completedCourses)
-                            ? completedCourses : (int?)null,
-                        CoursesInSpecialization = int.TryParse(worksheet.Cells[row, 10].Text, out var coursesInSpec)
-                            ? coursesInSpec : (int?)null,
-                        Completed = worksheet.Cells[row, 11].Text,
-                        RemovedFromProgram = worksheet.Cells[row, 12].Text,
-                        ProgramSlug = worksheet.Cells[row, 13].Text,
-                        ProgramName = worksheet.Cells[row, 14].Text,
-                        EnrollmentSource = worksheet.Cells[row, 15].Text ?? "Unknown",
-                        SpecializationCompletionTime = DateTime.TryParse(worksheet.Cells[row, 16].Text, out var completionTime)
-                            ? completionTime : (DateTime?)null,
-                        SpecializationCertificateURL = worksheet.Cells[row, 17].Text,
-                        JobTitle = worksheet.Cells[row, 18].Text,
-                        JobType = worksheet.Cells[row, 19].Text,
-                        LocationCity = worksheet.Cells[row, 20].Text,
-                        LocationRegion = worksheet.Cells[row, 21].Text ?? "Not Specified",
-                        LocationCountry = worksheet.Cells[row, 22].Text,
-                    };
-
-                    // Generate a unique key based on Email and ExternalId
-                    string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
-                    if (!fileKeys.Add(key))
-                    {
-                        fileDuplicateCount++;
-                        continue;
-                    }
-
-                    // Check for duplicates in the database
-                    bool exists = await _context.ExcelDataCourseraSpecialization.AnyAsync(r =>
-                        r.Email == record.Email &&
-                        (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId));
-                    if (!exists)
-                    {
-                        dataList.Add(record);
-                    }
-                    else
-                    {
-                        dbDuplicateCount++;
-                    }
-                }
-
-                _context.ExcelDataCourseraSpecialization.AddRange(dataList);
-                await _context.SaveChangesAsync();
+            // Generate a composite key for duplicate checking.
+            // Here we use Email, ExternalId, and AccountId (adjust as needed).
+            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}|{record.AccountId}";
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
             }
+
+            bool exists = await _context.ExcelDataCourseraSpecialization.AnyAsync(r =>
+                r.Email == record.Email &&
+                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId) &&
+                r.AccountId == currentAccountId
+            );
+
+            if (exists)
+                dbDuplicateCount++;
+            else
+                dataList.Add(record);
         }
 
+        _context.ExcelDataCourseraSpecialization.AddRange(dataList);
+        await _context.SaveChangesAsync();
+        return dbDuplicateCount + fileDuplicateCount;
+    }
+    private async Task<int> ProcessCourseraSpecializationCsvData(IFormFile file)
+    {
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            HasHeaderRecord = true,
+            HeaderValidated = null,
+            MissingFieldFound = null
+        };
+
+        using var streamReader = new StreamReader(file.OpenReadStream());
+        using var csv = new CsvReader(streamReader, config);
+        csv.Context.RegisterClassMap<ExcelDataCourseraSpecializationMap>();
+        var dataList = new List<ExcelDataCourseraSpecialization>();
+        var fileKeys = new HashSet<string>();
+
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+
+        await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraSpecialization>())
+        {
+            // Set default values if needed.
+            record.EnrollmentSource ??= "Unknown";
+            record.ProgramName ??= "Not Specified";
+            record.LocationRegion ??= "Not Specified";
+            record.AccountId = currentAccountId;
+            // Generate a unique key based on Email and ExternalId.
+            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}|{record.AccountId}";
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
+            }
+
+            bool exists = await _context.ExcelDataCourseraSpecialization.AnyAsync(r =>
+                r.Email == record.Email &&
+                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId) &&
+                r.AccountId == currentAccountId
+            );
+            if (!exists)
+                dataList.Add(record);
+            else
+                dbDuplicateCount++;
+        }
+
+        _context.ExcelDataCourseraSpecialization.AddRange(dataList);
+        await _context.SaveChangesAsync();
+        return dbDuplicateCount + fileDuplicateCount;
+    }
+
+    private async Task<int> ProcessCognitoMasterListCsvData(IFormFile file)
+    {
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            HasHeaderRecord = true,
+            HeaderValidated = null,
+            MissingFieldFound = null
+        };
+
+        using var streamReader = new StreamReader(file.OpenReadStream());
+        using var csv = new CsvReader(streamReader, config);
+        csv.Context.RegisterClassMap<ExcelDataCognitoMasterListMap>();
+        var dataList = new List<ExcelDataCognitoMasterList>();
+        var fileKeys = new HashSet<string>();
+
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+
+        await foreach (var record in csv.GetRecordsAsync<ExcelDataCognitoMasterList>())
+        {
+            record.Name_Middle ??= "Not Provided";
+            record.Address_Line2 ??= "N/A";
+            record.AccountId = currentAccountId;
+            // Generate a unique key based on Name_First, Name_Last, and Phone.
+            string key = $"{record.Name_First?.Trim()}|{record.Name_Last?.Trim()}|{record.Phone?.Trim()}|{record.AccountId}";
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
+            }
+
+            bool exists = await _context.ExcelDataCognitoMasterList.AnyAsync(r =>
+                r.Name_First == record.Name_First &&
+                r.Name_Last == record.Name_Last &&
+                r.Phone == record.Phone &&
+                r.AccountId == currentAccountId
+            );
+            if (!exists)
+                dataList.Add(record);
+            else
+                dbDuplicateCount++;
+        }
+
+        _context.ExcelDataCognitoMasterList.AddRange(dataList);
+        await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
     }
 
     private async Task<int> ProcessCognitoMasterListXlsxData(IFormFile file)
     {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        OfficeOpenXml.ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
 
-        using (var stream = new MemoryStream())
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+        using var package = new ExcelPackage(stream);
+        var worksheet = package.Workbook.Worksheets[0];
+        int rowCount = worksheet.Dimension.Rows;
+        var dataList = new List<ExcelDataCognitoMasterList>();
+        var fileKeys = new HashSet<string>();
+
+        for (int row = 2; row <= rowCount; row++)
         {
-            await file.CopyToAsync(stream);
-            using (var package = new ExcelPackage(stream))
+            var record = new ExcelDataCognitoMasterList
             {
-                var worksheet = package.Workbook.Worksheets[0];
-                int rowCount = worksheet.Dimension.Rows;
-                var dataList = new List<ExcelDataCognitoMasterList>();
-                var fileKeys = new HashSet<string>();
+                Name_First = worksheet.Cells[row, 2].Text,
+                Name_Middle = worksheet.Cells[row, 3].Text,
+                Name_Last = worksheet.Cells[row, 4].Text,
+                Phone = worksheet.Cells[row, 5].Text,
+                Age = int.TryParse(worksheet.Cells[row, 6].Text, out var age) ? age : (int?)null,
+                Address_Line1 = worksheet.Cells[row, 7].Text,
+                Address_Line2 = worksheet.Cells[row, 8].Text,
+                Address_City = worksheet.Cells[row, 9].Text,
+                Address_State = worksheet.Cells[row, 10].Text,
+                Address_PostalCode = worksheet.Cells[row, 11].Text,
+                IntendedMajor = worksheet.Cells[row, 12].Text,
+                ExpectedGraduation = worksheet.Cells[row, 13].Text,
+                CollegePlanToAttend_Name = worksheet.Cells[row, 14].Text,
+                CollegePlanToAttend_CityState = worksheet.Cells[row, 15].Text,
+                HighSchoolCollegeData_CurrentStudent = worksheet.Cells[row, 16].Text,
+                HighSchoolCollegeData_HighSchoolCollegeInformation = worksheet.Cells[row, 17].Text,
+                HighSchoolCollegeData_Phone = worksheet.Cells[row, 18].Text,
+                HighSchoolCollegeData_HighSchoolGraduation = DateTime.TryParse(worksheet.Cells[row, 19].Text, out var hsGradDate) ? hsGradDate : (DateTime?)null,
+                HighSchoolCollegeData_CumulativeGPA = decimal.TryParse(worksheet.Cells[row, 20].Text, out var gpa) ? gpa : (decimal?)null,
+                HighSchoolCollegeData_ACTCompositeScore = int.TryParse(worksheet.Cells[row, 21].Text, out var actScore) ? actScore : (int?)null,
+                HighSchoolCollegeData_SATCompositeScore = int.TryParse(worksheet.Cells[row, 22].Text, out var satScore) ? satScore : (int?)null,
+                HighSchoolCollegeData_SchoolCommunityRelatedActivities = worksheet.Cells[row, 23].Text,
+                HighSchoolCollegeData_HonorsAndSpecialRecognition = worksheet.Cells[row, 24].Text,
+                HighSchoolCollegeData_ExplainYourNeedForAssistance = worksheet.Cells[row, 25].Text,
+                WriteYourNameAsFormOfSignature = worksheet.Cells[row, 26].Text,
+                Date = DateTime.TryParse(worksheet.Cells[row, 27].Text, out var date) ? date : (DateTime?)null,
+                Entry_Status = worksheet.Cells[row, 28].Text,
+                Entry_DateCreated = DateTime.TryParse(worksheet.Cells[row, 29].Text, out var dateCreated) ? dateCreated : (DateTime?)null,
+                Entry_DateSubmitted = DateTime.TryParse(worksheet.Cells[row, 30].Text, out var dateSubmitted) ? dateSubmitted : (DateTime?)null,
+                Entry_DateUpdated = DateTime.TryParse(worksheet.Cells[row, 31].Text, out var dateUpdated) ? dateUpdated : (DateTime?)null,
+                AccountId = currentAccountId
+            };
 
-                // Loop from row 2 (assuming row 1 is header)
-                for (int row = 2; row <= rowCount; row++)
-                {
-                    var record = new ExcelDataCognitoMasterList
-                    {
-                        Name_First = worksheet.Cells[row, 2].Text,
-                        Name_Middle = worksheet.Cells[row, 3].Text,
-                        Name_Last = worksheet.Cells[row, 4].Text,
-                        Phone = worksheet.Cells[row, 5].Text,
-                        Age = int.TryParse(worksheet.Cells[row, 6].Text, out var age) ? age : (int?)null,
-                        Address_Line1 = worksheet.Cells[row, 7].Text,
-                        Address_Line2 = worksheet.Cells[row, 8].Text,
-                        Address_City = worksheet.Cells[row, 9].Text,
-                        Address_State = worksheet.Cells[row, 10].Text,
-                        Address_PostalCode = worksheet.Cells[row, 11].Text,
-                        IntendedMajor = worksheet.Cells[row, 12].Text,
-                        ExpectedGraduation = worksheet.Cells[row, 13].Text,
-                        CollegePlanToAttend_Name = worksheet.Cells[row, 14].Text,
-                        CollegePlanToAttend_CityState = worksheet.Cells[row, 15].Text,
-                        HighSchoolCollegeData_CurrentStudent = worksheet.Cells[row, 16].Text,
-                        HighSchoolCollegeData_HighSchoolCollegeInformation = worksheet.Cells[row, 17].Text,
-                        HighSchoolCollegeData_Phone = worksheet.Cells[row, 18].Text,
-                        HighSchoolCollegeData_HighSchoolGraduation = DateTime.TryParse(worksheet.Cells[row, 19].Text, out var hsGradDate)
-                            ? hsGradDate : (DateTime?)null,
-                        HighSchoolCollegeData_CumulativeGPA = decimal.TryParse(worksheet.Cells[row, 20].Text, out var gpa)
-                            ? gpa : (decimal?)null,
-                        HighSchoolCollegeData_ACTCompositeScore = int.TryParse(worksheet.Cells[row, 21].Text, out var actScore)
-                            ? actScore : (int?)null,
-                        HighSchoolCollegeData_SATCompositeScore = int.TryParse(worksheet.Cells[row, 22].Text, out var satScore)
-                            ? satScore : (int?)null,
-                        HighSchoolCollegeData_SchoolCommunityRelatedActivities = worksheet.Cells[row, 23].Text,
-                        HighSchoolCollegeData_HonorsAndSpecialRecognition = worksheet.Cells[row, 24].Text,
-                        HighSchoolCollegeData_ExplainYourNeedForAssistance = worksheet.Cells[row, 25].Text,
-                        WriteYourNameAsFormOfSignature = worksheet.Cells[row, 26].Text,
-                        Date = DateTime.TryParse(worksheet.Cells[row, 27].Text, out var date)
-                            ? date : (DateTime?)null,
-                        Entry_Status = worksheet.Cells[row, 28].Text,
-                        Entry_DateCreated = DateTime.TryParse(worksheet.Cells[row, 29].Text, out var dateCreated)
-                            ? dateCreated : (DateTime?)null,
-                        Entry_DateSubmitted = DateTime.TryParse(worksheet.Cells[row, 30].Text, out var dateSubmitted)
-                            ? dateSubmitted : (DateTime?)null,
-                        Entry_DateUpdated = DateTime.TryParse(worksheet.Cells[row, 31].Text, out var dateUpdated)
-                            ? dateUpdated : (DateTime?)null,
-                    };
-
-                    // Generate a key using Name_First, Name_Last, and Phone
-                    string key = $"{record.Name_First?.Trim()}|{record.Name_Last?.Trim()}|{record.Phone?.Trim()}";
-                    if (!fileKeys.Add(key))
-                    {
-                        fileDuplicateCount++;
-                        continue;
-                    }
-
-                    bool exists = await _context.ExcelDataCognitoMasterList.AnyAsync(r =>
-                        r.Name_First == record.Name_First &&
-                        r.Name_Last == record.Name_Last &&
-                        r.Phone == record.Phone);
-                    if (!exists)
-                    {
-                        dataList.Add(record);
-                    }
-                    else
-                    {
-                        dbDuplicateCount++;
-                    }
-                }
-
-                _context.ExcelDataCognitoMasterList.AddRange(dataList);
-                await _context.SaveChangesAsync();
+            string key = $"{record.Name_First?.Trim()}|{record.Name_Last?.Trim()}|{record.Phone?.Trim()}|{record.AccountId}";
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
             }
+
+            bool exists = await _context.ExcelDataCognitoMasterList.AnyAsync(r =>
+                r.Name_First == record.Name_First &&
+                r.Name_Last == record.Name_Last &&
+                r.Phone == record.Phone &&
+                r.AccountId == currentAccountId
+            );
+            if (!exists)
+                dataList.Add(record);
+            else
+                dbDuplicateCount++;
         }
 
+        _context.ExcelDataCognitoMasterList.AddRange(dataList);
+        await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
     }
 
@@ -1075,6 +1029,9 @@ public class UploadFileController : Controller
             MissingFieldFound = null
         };
 
+        // Add current account retrieval for GoogleForms.
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+
         using (var streamReader = new StreamReader(file.OpenReadStream()))
         using (var csv = new CsvReader(streamReader, config))
         {
@@ -1084,7 +1041,7 @@ public class UploadFileController : Controller
 
             await foreach (var record in csv.GetRecordsAsync<ExcelDataGoogleFormsVolunteerProgram>())
             {
-                // Normalize fields and set defaults
+                // Normalize fields and set defaults.
                 record.Timestamp = DateTime.TryParse(record.Timestamp.ToString(), out var timestamp)
                     ? timestamp
                     : DateTime.MinValue;
@@ -1093,22 +1050,24 @@ public class UploadFileController : Controller
                     : null;
                 record.MethodOfContact ??= "Unknown";
                 record.Comment ??= "No comment provided";
-
-                // Generate a unique key for this record within the file
+                // **Add the current AccountId to the record.**
+                record.AccountId = currentAccountId;
+                // Generate a unique key for this record within the file.
                 string key = $"{record.Timestamp.ToString("o")}|{record.Mentor?.Trim()}|{record.Mentee?.Trim()}|{(record.Date.HasValue ? record.Date.Value.ToString("yyyy-MM-dd") : "")}";
                 if (!fileKeys.Add(key))
                 {
-                    // Duplicate within the file – count and skip it
+                    // Duplicate within the file – count and skip it.
                     fileDuplicateCount++;
                     continue;
                 }
-
-                // Check for duplicates in the database
+                // Check for duplicates in the database.
                 bool exists = await _context.ExcelDataGoogleFormsVolunteerProgram.AnyAsync(r =>
                     r.Timestamp == record.Timestamp &&
                     r.Mentor == record.Mentor &&
                     r.Mentee == record.Mentee &&
-                    r.Date == record.Date);
+                    r.Date == record.Date &&
+                    r.AccountId == currentAccountId
+                );
                 if (!exists)
                 {
                     dataList.Add(record);
@@ -1118,11 +1077,9 @@ public class UploadFileController : Controller
                     dbDuplicateCount++;
                 }
             }
-
             _context.ExcelDataGoogleFormsVolunteerProgram.AddRange(dataList);
             await _context.SaveChangesAsync();
         }
-
         return dbDuplicateCount + fileDuplicateCount;
     }
 
@@ -1132,43 +1089,45 @@ public class UploadFileController : Controller
         int fileDuplicateCount = 0;
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
+        // Add current account retrieval.
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+
         using (var stream = new MemoryStream())
         {
             await file.CopyToAsync(stream);
             using (var package = new ExcelPackage(stream))
             {
-                var worksheet = package.Workbook.Worksheets[0]; // Assume data is in the first worksheet
+                var worksheet = package.Workbook.Worksheets[0]; // Assume data is in the first worksheet.
                 int rowCount = worksheet.Dimension.Rows;
                 var dataList = new List<ExcelDataGoogleFormsVolunteerProgram>();
                 var fileKeys = new HashSet<string>();
 
-                // Loop from row 2 (assuming row 1 is the header)
+                // Loop from row 2 (assuming row 1 is the header).
                 for (int row = 2; row <= rowCount; row++)
                 {
-                    // Optionally, break if a key column (e.g. Mentor) is empty
+                    // Optionally, break if a key column (e.g. Mentor) is empty.
                     if (string.IsNullOrWhiteSpace(worksheet.Cells[row, 2].Text))
                     {
                         break;
                     }
-
                     var timestamp = DateTime.TryParse(worksheet.Cells[row, 1].Text, out var parsedTimestamp)
-                        ? parsedTimestamp : DateTime.MinValue;
+                        ? parsedTimestamp
+                        : DateTime.MinValue;
                     string mentor = worksheet.Cells[row, 2].Text;
                     string mentee = worksheet.Cells[row, 3].Text;
                     var date = DateTime.TryParse(worksheet.Cells[row, 4].Text, out var parsedDate)
-                        ? parsedDate : (DateTime?)null;
+                        ? parsedDate
+                        : (DateTime?)null;
                     string time = worksheet.Cells[row, 5].Text;
                     string methodOfContact = worksheet.Cells[row, 6].Text;
                     string comment = worksheet.Cells[row, 7].Text;
-
-                    // Generate a unique key for this record within the file
+                    // Generate a unique key for this record within the file.
                     string key = $"{timestamp.ToString("o")}|{mentor.Trim()}|{mentee.Trim()}|{(date.HasValue ? date.Value.ToString("yyyy-MM-dd") : "")}";
                     if (!fileKeys.Add(key))
                     {
                         fileDuplicateCount++;
                         continue;
                     }
-
                     var record = new ExcelDataGoogleFormsVolunteerProgram
                     {
                         Timestamp = timestamp,
@@ -1177,14 +1136,18 @@ public class UploadFileController : Controller
                         Date = date,
                         Time = time,
                         MethodOfContact = string.IsNullOrWhiteSpace(methodOfContact) ? "Unknown" : methodOfContact,
-                        Comment = string.IsNullOrWhiteSpace(comment) ? "No comment provided" : comment
+                        Comment = string.IsNullOrWhiteSpace(comment) ? "No comment provided" : comment,
+                        // **Add the current AccountId to the record.**
+                        AccountId = currentAccountId
                     };
 
                     bool exists = await _context.ExcelDataGoogleFormsVolunteerProgram.AnyAsync(r =>
                         r.Timestamp == record.Timestamp &&
                         r.Mentor == record.Mentor &&
                         r.Mentee == record.Mentee &&
-                        r.Date == record.Date);
+                        r.Date == record.Date &&
+                        r.AccountId == currentAccountId
+                    );
                     if (!exists)
                     {
                         dataList.Add(record);
@@ -1194,12 +1157,10 @@ public class UploadFileController : Controller
                         dbDuplicateCount++;
                     }
                 }
-
                 _context.ExcelDataGoogleFormsVolunteerProgram.AddRange(dataList);
                 await _context.SaveChangesAsync();
             }
         }
-
         return dbDuplicateCount + fileDuplicateCount;
     }
 
@@ -1208,6 +1169,4 @@ public class UploadFileController : Controller
         ViewBag.DuplicateMessage = DuplicateMessage;
         return View();
     }
-
-
 }

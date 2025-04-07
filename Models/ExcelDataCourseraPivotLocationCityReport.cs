@@ -5,6 +5,7 @@ namespace MBBS.Dashboard.web.Models
     public class ExcelDataCourseraPivotLocationCityReport
     {
         public int Id { get; set; } // Primary key
+        public int? AccountId { get; set; }
 
         public string LocationCity { get; set; }
         public int? CurrentMembers { get; set; }
