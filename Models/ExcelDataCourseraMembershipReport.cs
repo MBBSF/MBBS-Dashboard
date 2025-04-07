@@ -5,6 +5,7 @@ namespace MBBS.Dashboard.web.Models
     public class ExcelDataCourseraMembershipReport
     {
         public int Id { get; set; } // Primary key
+        public int? AccountId { get; set; }
 
         public string Name { get; set; }
         public string Email { get; set; }

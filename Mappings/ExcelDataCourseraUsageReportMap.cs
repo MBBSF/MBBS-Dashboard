@@ -7,6 +7,7 @@ namespace MBBS.Dashboard.web.Mappings
     {
         public ExcelDataCourseraUsageReportMap()
         {
+            Map(m => m.AccountId).Ignore();
             Map(m => m.Name).Name("Name");
             Map(m => m.Email).Name("Email");
             Map(m => m.ExternalId).Name("External Id");
