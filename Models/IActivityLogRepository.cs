@@ -7,5 +7,6 @@ namespace MBBS.Dashboard.web.Models
     {
         void AddLog(ActivityLog log);
         IEnumerable<ActivityLog> GetLogsForAccount(int accountId);
+        Task<List<ActivityLog>> GetRecentActivityLogsAsync(int v);
     }
 }
