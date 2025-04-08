@@ -6,7 +6,7 @@ namespace MBBS.Dashboard.web.Models
     {
         public int Id { get; set; } // Primary key
 
-        
+        public int? AccountId { get; set; }
         public string Name { get; set; }
         public string Email { get; set; }
         public string ExternalId { get; set; }
