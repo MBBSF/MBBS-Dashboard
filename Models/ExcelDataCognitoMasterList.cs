@@ -9,7 +9,7 @@ namespace MBBS.Dashboard.web.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id { get; set; }
-        public int? AccountId { get; set; }
+      
         
         public string Name_First { get; set; }
         public string Name_Middle { get; set; }

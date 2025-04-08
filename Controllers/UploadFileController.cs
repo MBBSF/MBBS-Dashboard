@@ -351,7 +351,7 @@ public class UploadFileController : Controller
             record.EnrollmentSource ??= "Unknown";
             record.ProgramName ??= "Not Specified";
             record.LocationRegion ??= "Not Specified";
-            record.AccountId = currentAccountId;
+           // record.AccountId = currentAccountId;
             // Remove AccountId from the composite key.
             string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
             if (!fileKeys.Add(key))
@@ -417,7 +417,7 @@ public class UploadFileController : Controller
                 LocationCity = worksheet.Cells[row, 20].Text,
                 LocationRegion = worksheet.Cells[row, 21].Text,
                 LocationCountry = worksheet.Cells[row, 22].Text,
-                AccountId = currentAccountId
+               // AccountId = currentAccountId
             };
             // Remove AccountId from the duplicate key.
             string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
@@ -457,7 +457,7 @@ public class UploadFileController : Controller
         int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
         await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraMembershipReport>())
         {
-            record.AccountId = currentAccountId;
+          //  record.AccountId = currentAccountId;
             // Remove AccountId from the composite key.
             string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
             if (!fileKeys.Add(key))
@@ -511,7 +511,7 @@ public class UploadFileController : Controller
                 LocationCity = worksheet.Cells[row, 14].Text,
                 LocationRegion = worksheet.Cells[row, 15].Text,
                 LocationCountry = worksheet.Cells[row, 16].Text,
-                AccountId = currentAccountId
+            //    AccountId = currentAccountId
             };
             string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
             if (!fileKeys.Add(key))
@@ -552,7 +552,7 @@ public class UploadFileController : Controller
 
         await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraUsageReport>())
         {
-            record.AccountId = currentAccountId;
+          //  record.AccountId = currentAccountId;
             // Build a composite key without AccountId.
             string key = string.Join("|", new string[]
             {
@@ -674,7 +674,7 @@ public class UploadFileController : Controller
                 LocationCity = worksheet.Cells[row, 26].Text,
                 LocationRegion = worksheet.Cells[row, 27].Text,
                 LocationCountry = worksheet.Cells[row, 28].Text,
-                AccountId = currentAccountId
+                //AccountId = currentAccountId
             };
             // Build composite key without including AccountId.
             string key = string.Join("|", new string[]
@@ -770,7 +770,7 @@ public class UploadFileController : Controller
         int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
         await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraPivotLocationCityReport>())
         {
-            record.AccountId = currentAccountId;
+          //  record.AccountId = currentAccountId;
             string key = record.LocationCity?.Trim(); // Composite key excludes account id.
             if (!fileKeys.Add(key))
             {
@@ -815,7 +815,7 @@ public class UploadFileController : Controller
                 TotalEstimatedLearningHours = decimal.TryParse(worksheet.Cells[row, 7].Text, out var totalEstHours) ? totalEstHours : (decimal?)null,
                 AverageEstimatedLearningHours = decimal.TryParse(worksheet.Cells[row, 8].Text, out var avgEstHours) ? avgEstHours : (decimal?)null,
                 DeletedMembers = int.TryParse(worksheet.Cells[row, 9].Text, out var deletedMembers) ? deletedMembers : (int?)null,
-                AccountId = currentAccountId
+                //AccountId = currentAccountId
             };
             string key = record.LocationCity?.Trim(); // Duplicate key does not include account id.
             if (!fileKeys.Add(key))
@@ -855,7 +855,7 @@ public class UploadFileController : Controller
         {
             record.Name_Middle ??= "Not Provided";
             record.Address_Line2 ??= "N/A";
-            record.AccountId = currentAccountId;
+           // record.AccountId = currentAccountId;
             string key = $"{record.Name_First?.Trim()}|{record.Name_Last?.Trim()}|{record.Phone?.Trim()}";
             if (!fileKeys.Add(key))
             {
@@ -923,7 +923,7 @@ public class UploadFileController : Controller
                 Entry_DateCreated = DateTime.TryParse(worksheet.Cells[row, 29].Text, out var dateCreated) ? dateCreated : (DateTime?)null,
                 Entry_DateSubmitted = DateTime.TryParse(worksheet.Cells[row, 30].Text, out var dateSubmitted) ? dateSubmitted : (DateTime?)null,
                 Entry_DateUpdated = DateTime.TryParse(worksheet.Cells[row, 31].Text, out var dateUpdated) ? dateUpdated : (DateTime?)null,
-                AccountId = currentAccountId
+                //AccountId = currentAccountId
             };
             string key = $"{record.Name_First?.Trim()}|{record.Name_Last?.Trim()}|{record.Phone?.Trim()}";
             if (!fileKeys.Add(key))
@@ -976,7 +976,7 @@ public class UploadFileController : Controller
                     : null;
                 record.MethodOfContact ??= "Unknown";
                 record.Comment ??= "No comment provided";
-                record.AccountId = currentAccountId;
+             //   record.AccountId = currentAccountId;
                 string key = $"{record.Timestamp.ToString("o")}|{record.Mentor?.Trim()}|{record.Mentee?.Trim()}|{(record.Date.HasValue ? record.Date.Value.ToString("yyyy-MM-dd") : "")}";
                 if (!fileKeys.Add(key))
                 {
@@ -1046,7 +1046,7 @@ public class UploadFileController : Controller
                         Time = time,
                         MethodOfContact = string.IsNullOrWhiteSpace(methodOfContact) ? "Unknown" : methodOfContact,
                         Comment = string.IsNullOrWhiteSpace(comment) ? "No comment provided" : comment,
-                        AccountId = currentAccountId
+                        //AccountId = currentAccountId
                     };
                     bool exists = await _context.ExcelDataGoogleFormsVolunteerProgram.AnyAsync(r =>
                         r.Timestamp == record.Timestamp &&
