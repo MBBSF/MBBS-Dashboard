@@ -351,7 +351,7 @@ public class UploadFileController : Controller
             record.EnrollmentSource ??= "Unknown";
             record.ProgramName ??= "Not Specified";
             record.LocationRegion ??= "Not Specified";
-            record.AccountId = currentAccountId;
+            //record.AccountId = currentAccountId;
             // Remove AccountId from the composite key.
             string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
             if (!fileKeys.Add(key))
@@ -417,7 +417,7 @@ public class UploadFileController : Controller
                 LocationCity = worksheet.Cells[row, 20].Text,
                 LocationRegion = worksheet.Cells[row, 21].Text,
                 LocationCountry = worksheet.Cells[row, 22].Text,
-                AccountId = currentAccountId
+                //AccountId = currentAccountId
             };
             // Remove AccountId from the duplicate key.
             string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";

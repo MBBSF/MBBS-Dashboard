@@ -50,29 +50,7 @@ namespace MBBS.Dashboard.web.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "AccountId",
-                table: "ExcelDataGoogleFormsVolunteerProgram");
-
-            migrationBuilder.DropColumn(
-                name: "AccountId",
-                table: "ExcelDataCourseraUsageReports");
-
-            migrationBuilder.DropColumn(
-                name: "AccountId",
-                table: "ExcelDataCourseraSpecialization");
-
-            migrationBuilder.DropColumn(
-                name: "AccountId",
-                table: "ExcelDataCourseraPivotLocationCityReports");
-
-            migrationBuilder.DropColumn(
-                name: "AccountId",
-                table: "ExcelDataCourseraMembershipReports");
-
-            migrationBuilder.DropColumn(
-                name: "AccountId",
-                table: "ExcelDataCognitoMasterList");
+           
         }
     }
 }

@@ -25,5 +25,10 @@ namespace MBBS.Dashboard.web.Models
                            .Where(log => log.AccountId == accountId)
                            .OrderByDescending(log => log.Timestamp);
         }
+
+        public Task<IEnumerable<object>> GetRecentActivityLogsAsync(int v)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
