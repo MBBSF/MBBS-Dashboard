@@ -1,43 +1,40 @@
-﻿@model IEnumerable<Account>
-
+@model IEnumerable<Account>
 @{
-    ViewData["Title"] = "View";
+    ViewData["Title"] = "Account List";
 }
-
-<h1>View</h1>
-
+<h1>Account List</h1>
 <p>
     <a asp-action="AccountCreation">Register Account</a>
 </p>
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.First().LegalName) // Use First() for DisplayName
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.First().Email) // Use First() for DisplayName
-            </th>
-            <th></th>
-            <th>
-
-            </th>
+            <th>@Html.DisplayNameFor(model => model.First().LegalName)</th>
+            <th>@Html.DisplayNameFor(model => model.First().Email)</th>
+            <th>Actions</th>
+            <th>Account Status</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var item in Model)
         {
             <tr>
-                <td>
-                    @Html.DisplayFor(modelItem => item.LegalName)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Email)
-                </td>
+                <td>@Html.DisplayFor(modelItem => item.LegalName)</td>
+                <td>@Html.DisplayFor(modelItem => item.Email)</td>
                 <td>
                     <a asp-action="AccountSettings" asp-route-id="@item.Id">Edit</a> |
-                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a>
+                </td>
+                <td>
+                    <!-- This form posts to the SetAccountStatus action.
+                         It sends the account ID and sets isActive to false if the account is active, and vice versa. -->
+                    <form asp-action="SetAccountStatus" method="post" style="display:inline;">
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <input type="hidden" name="isActive" value="@(item.IsActive ? "false" : "true")" />
+                        <button type="submit" class="btn btn-link">
+                            @(item.IsActive ? "Deactivate" : "Activate")
+                        </button>
+                    </form>
                 </td>
             </tr>
         }

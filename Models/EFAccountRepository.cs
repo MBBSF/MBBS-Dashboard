@@ -1,6 +1,4 @@
 ﻿using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace MBBS.Dashboard.web.Models
 {
@@ -18,16 +16,19 @@ namespace MBBS.Dashboard.web.Models
         {
             if (account.Id == 0)
             {
+                // For new accounts, add the account directly.
                 _context.Accounts.Add(account);
             }
             else
             {
+                // For existing accounts, update the properties.
                 var dbEntry = _context.Accounts.FirstOrDefault(a => a.Id == account.Id);
                 if (dbEntry != null)
                 {
                     dbEntry.LegalName = account.LegalName;
                     dbEntry.Email = account.Email;
-                    dbEntry.Password = HashPassword(account.Password);
+                    // Save the plain-text password.
+                    dbEntry.Password = account.Password;
                 }
             }
             _context.SaveChanges();
@@ -35,22 +36,8 @@ namespace MBBS.Dashboard.web.Models
 
         public Account AuthenticateUser(string username, string password)
         {
-            string hashedPassword = HashPassword(password);
-            return _context.Accounts.FirstOrDefault(a => a.Username == username && a.Password == hashedPassword);
-        }
-
-        public string HashPassword(string password)
-        {
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                StringBuilder builder = new StringBuilder();
-                foreach (byte b in bytes)
-                {
-                    builder.Append(b.ToString("x2"));
-                }
-                return builder.ToString();
-            }
+            // Compare the plain-text password directly.
+            return _context.Accounts.FirstOrDefault(a => a.Username == username && a.Password == password);
         }
     }
 }
