@@ -34,13 +34,23 @@ namespace MBBS.Dashboard.web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> ViewDataByPlatform(int platformId, string sortBy, string sortOrder)
+        public async Task<IActionResult> ViewDataByPlatform(int platformId, string sortBy, string sortOrder, string searchQuery = null)
         {
             var viewModel = await GetDashboardViewModel();
             viewModel.PlatformId = platformId;
             viewModel.PlatformData = await GetPlatformData(platformId);
+            viewModel.SearchQuery = searchQuery;
 
-            if (platformId == 1)
+            if (!string.IsNullOrEmpty(searchQuery))
+            {
+                viewModel.PlatformData = viewModel.PlatformData
+                    .Where(p => p.GetType().GetProperties()
+                        .Any(prop => prop.GetValue(p)?.ToString()?.ToLower()
+                            .Contains(searchQuery.ToLower()) ?? false))
+                    .ToList();
+            }
+
+            if (!string.IsNullOrEmpty(sortBy))
             {
                 switch (sortBy)
                 {
@@ -131,7 +141,42 @@ namespace MBBS.Dashboard.web.Controllers
 
             return new DashboardViewModel
             {
-                KpiData = kpiData,
+                KpiData = new KpiDataViewModel
+                {
+                    TotalUsers = courseraData.Count + cognitoData.Count + googleFormsData.Count,
+                    TotalCourseraUsers = courseraData.Count,
+                    TotalCognitoUsers = cognitoData.Count,
+                    TotalGoogleFormsUsers = googleFormsData.Count
+                },
+                GoogleCertificationKPIs = googleCertKPIs,
+                MentoringProgramKPIs = mentoringKPIs,
+                ScholarshipApplicationKPIs = scholarshipKPIs,
+                CourseraMembershipReports = membershipReports.Select(x => new KpiDataViewModel.CourseraMembershipReportViewModel
+                {
+                    MemberState = x.MemberState,
+                    Name = x.Name,
+                    Email = x.Email,
+                    ProgramName = x.ProgramName,
+                    EnrolledCourses = x.EnrolledCourses ?? 0,
+                    CompletedCourses = x.CompletedCourses ?? 0
+                }).ToList(),
+                CourseraPivotLocationCityReports = pivotReports.Select(x => new KpiDataViewModel.CourseraPivotLocationCityReportViewModel
+                {
+                    LocationCity = x.LocationCity,
+                    CurrentMembers = x.CurrentMembers ?? 0,
+                    CurrentLearners = x.CurrentLearners ?? 0,
+                    TotalEnrollments = x.TotalEnrollments ?? 0,
+                    TotalCompletedCourses = x.TotalCompletedCourses ?? 0,
+                    AverageProgress = (double?)x.AverageProgress
+                }).ToList(),
+                CourseraUsageReports = usageReports.Select(x => new KpiDataViewModel.CourseraUsageReportViewModel
+                {
+                    Name = x.Name,
+                    Course = x.Course,
+                    OverallProgress = (double?)x.OverallProgress,
+                    Completed = x.Completed,
+                    EstimatedLearningHours = (double)(x.EstimatedLearningHours ?? 0)
+                }).ToList(),
                 CourseraData = courseraData,
                 CognitoData = cognitoData,
                 GoogleFormsData = googleFormsData

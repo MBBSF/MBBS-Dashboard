@@ -12,6 +12,8 @@
 }
 else
 {
+    <h3>Key Performance Metrics</h3>
+    <!-- Categorized KPIs Section -->
     <div class="row">
         <!-- Key Performance Metrics Section -->
         <div class="col-md-6">
@@ -48,27 +50,27 @@ else
         </div>
     </div>
 
-    <!-- Distribution Data Section -->
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <h3>Specialization Distribution</h3>
-            @if (Model.KpiData.SpecializationDistribution != null && Model.KpiData.SpecializationDistribution.Any())
-            {
-                <ul class="list-group">
-                    @foreach (var kvp in Model.KpiData.SpecializationDistribution)
-                    {
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            @kvp.Key
-                            <span class="badge bg-primary rounded-pill">@kvp.Value</span>
-                        </li>
-                    }
-                </ul>
-            }
-            else
-            {
-                <p>No specialization data available.</p>
-            }
+                    <h4 class="mt-3">Specialization Distribution</h4>
+                    <ul class="list-group">
+                        @{
+                            var specializationItems = Model.GoogleCertificationKPIs.SpecializationDistribution
+                            .AsEnumerable()
+                            .OrderByDescending(pair => pair.Value)
+                            ;
+                        }
+                        @foreach (var kvp in specializationItems)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                @kvp.Key
+                                <span class="badge bg-primary rounded-pill">@kvp.Value</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
         </div>
+
+        <!-- Mentoring Program -->
         <div class="col-md-4">
             <h3>Intended Major Distribution</h3>
             @if (Model.KpiData.IntendedMajorDistribution != null && Model.KpiData.IntendedMajorDistribution.Any())
@@ -89,23 +91,36 @@ else
             }
         </div>
         <div class="col-md-4">
-            <h3>Contact Method Preference</h3>
-            @if (Model.KpiData.ContactMethodPreference != null && Model.KpiData.ContactMethodPreference.Any())
-            {
-                <ul class="list-group">
-                    @foreach (var kvp in Model.KpiData.ContactMethodPreference)
-                    {
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            @kvp.Key
-                            <span class="badge bg-primary rounded-pill">@kvp.Value</span>
-                        </li>
-                    }
-                </ul>
-            }
-            else
-            {
-                <p>No contact method preference data available.</p>
-            }
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h3>Scholarship Application Program</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item"><strong>Total Applications:</strong> @Model.ScholarshipApplicationKPIs.TotalApplications</li>
+                        <li class="list-group-item"><strong>Phone Provision Rate:</strong> @Model.ScholarshipApplicationKPIs.PhoneNumberProvisionRate.ToString("P2")</li>
+                        <li class="list-group-item"><strong>Average GPA:</strong> @Model.ScholarshipApplicationKPIs.AverageGPA.ToString("F2")</li>
+                    </ul>
+
+                    <h4 class="mt-3">Top Intended Majors</h4>
+                    <ul class="list-group">
+                        @{
+                            var sortedMajors = Model.ScholarshipApplicationKPIs.IntendedMajorDistribution
+                            .AsEnumerable()
+                            .OrderByDescending(pair => pair.Value)
+                            ;
+
+                        }
+                        @foreach (var kvp in sortedMajors)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                @kvp.Key
+                                <span class="badge bg-info rounded-pill">@kvp.Value</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -133,80 +148,153 @@ else
     @if (Model.PlatformData != null)
     {
         <div class="mt-4">
-            <h3>Detailed Platform Data</h3>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        @if (Model.PlatformId == 1)
-                        {
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Name">Name</a>
-                            </th>
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Email">Email</a>
-                            </th>
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Specialization">Specialization</a>
-                            </th>
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Completed">Completed</a>
-                            </th>
-                        }
-                        else if (Model.PlatformId == 2)
-                        {
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Name_First">First Name</a>
-                            </th>
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Name_Last">Last Name</a>
-                            </th>
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Phone">Phone</a>
-                            </th>
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="IntendedMajor">Intended Major</a>
-                            </th>
-                        }
-                        else if (Model.PlatformId == 3)
-                        {
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Mentor">Mentor</a>
-                            </th>
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Mentee">Mentee</a>
-                            </th>
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="Date">Date</a>
-                            </th>
-                            <th>
-                                <a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortOrder="@(Model.CurrentSortOrder == "asc" ? "desc" : "asc")" asp-route-sortBy="MethodOfContact">Method of Contact</a>
-                            </th>
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.PlatformData)
-                    {
+            <h3>Platform-Specific Data</h3>
+
+            @if (Model.PlatformId == 1) // Coursera
+            {
+                <h3>Coursera Reports</h3>
+
+                <ul class="nav nav-tabs" id="courseraReportsTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="membership-tab" data-bs-toggle="tab" data-bs-target="#membership" type="button" role="tab">Membership Report</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="location-tab" data-bs-toggle="tab" data-bs-target="#location" type="button" role="tab">Location Report</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="usage-tab" data-bs-toggle="tab" data-bs-target="#usage" type="button" role="tab">Usage Report</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="courseraReportsTabContent">
+                    <!-- Membership Report -->
+                    <div class="tab-pane fade show active" id="membership" role="tabpanel">
+                        <table class="table table-striped mt-3">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Program</th>
+                                    <th>Enrolled Courses</th>
+                                    <th>Completed Courses</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var report in Model.CourseraMembershipReports)
+                                {
+                                    <tr>
+                                        <td>@report.Name</td>
+                                        <td>@report.Email</td>
+                                        <td>@report.ProgramName</td>
+                                        <td>@report.EnrolledCourses</td>
+                                        <td>@report.CompletedCourses</td>
+                                        <td>@report.MemberState</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Location Report -->
+                    <div class="tab-pane fade" id="location" role="tabpanel">
+                        <table class="table table-striped mt-3">
+                            <thead>
+                                <tr>
+                                    <th>Location City</th>
+                                    <th>Current Members</th>
+                                    <th>Current Learners</th>
+                                    <th>Total Enrollments</th>
+                                    <th>Completed Courses</th>
+                                    <th>Avg Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var report in Model.CourseraPivotLocationCityReports)
+                                {
+                                    <tr>
+                                        <td>@report.LocationCity</td>
+                                        <td>@report.CurrentMembers</td>
+                                        <td>@report.CurrentLearners</td>
+                                        <td>@report.TotalEnrollments</td>
+                                        <td>@report.TotalCompletedCourses</td>
+                                        <td>@(report.AverageProgress?.ToString("P0") ?? "N/A")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Usage Report -->
+                    <div class="tab-pane fade" id="usage" role="tabpanel">
+                        <table class="table table-striped mt-3">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Course</th>
+                                    <th>Progress</th>
+                                    <th>Completed</th>
+                                    <th>Learning Hours</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var report in Model.CourseraUsageReports)
+                                {
+                                    <tr>
+                                        <td>@report.Name</td>
+                                        <td>@report.Course</td>
+                                        <td>@(report.OverallProgress?.ToString("P0") ?? "N/A")</td>
+                                        <td>@report.Completed</td>
+                                        <td>@report.EstimatedLearningHours</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+            else if (Model.PlatformId == 2) // Cognito
+            {
+                <table class="table table-striped mt-3">
+                    <thead>
                         <tr>
-                            @if (Model.PlatformId == 1)
-                            {
-                                <td>@((item as dynamic).Name)</td>
-                                <td>@((item as dynamic).Email)</td>
-                                <td>@((item as dynamic).Specialization)</td>
-                                <td>@((item as dynamic).Completed)</td>
-                            }
-                            else if (Model.PlatformId == 2)
-                            {
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Phone</th>
+                            <th>Intended Major</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.PlatformData)
+                        {
+                            <tr>
                                 <td>@((item as dynamic).Name_First)</td>
                                 <td>@((item as dynamic).Name_Last)</td>
                                 <td>@((item as dynamic).Phone)</td>
                                 <td>@((item as dynamic).IntendedMajor)</td>
-                            }
-                            else if (Model.PlatformId == 3)
-                            {
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else if (Model.PlatformId == 3) // Google Forms
+            {
+                <table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>Mentor</th>
+                            <th>Mentee</th>
+                            <th>Date</th>
+                            <th>Method of Contact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.PlatformData)
+                        {
+                            <tr>
                                 <td>@((item as dynamic).Mentor)</td>
                                 <td>@((item as dynamic).Mentee)</td>
-                                <td>@(((DateTime?)(item as dynamic).Date)?.ToString("d"))</td>
+                                <td>@(((DateTime?)(item as dynamic).Date)?.ToString("d") ?? "N/A")</td>
                                 <td>@((item as dynamic).MethodOfContact)</td>
                             }
                         </tr>

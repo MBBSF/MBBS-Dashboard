@@ -12,8 +12,11 @@ namespace MBBS.Dashboard.web.Models
         public List<ExcelDataCourseraSpecialization> CourseraData { get; set; }
         public List<ExcelDataCognitoMasterList> CognitoData { get; set; }
         public List<ExcelDataGoogleFormsVolunteerProgram> GoogleFormsData { get; set; }
-        public string CurrentSortOrder { get; internal set; }
-        public string CurrentSortBy { get; internal set; }
+        public List<ActivityLogViewModel> ActivityLogs { get; set; }
+        public int PlatformId { get; set; }
+        public List<object> PlatformData { get; set; }
+        public string CurrentSortBy { get; set; }
+        public string CurrentSortOrder { get; set; }
     }
 
     public class KpiData
