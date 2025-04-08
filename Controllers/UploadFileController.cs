@@ -107,50 +107,44 @@ public class UploadFileController : Controller
 
         if (fileExtension == ".csv")
         {
-            using (var streamReader = new StreamReader(file.OpenReadStream()))
-            using (var csv = new CsvReader(streamReader, new CsvConfiguration(CultureInfo.InvariantCulture)
+            using var streamReader = new StreamReader(file.OpenReadStream());
+            using var csv = new CsvReader(streamReader, new CsvConfiguration(CultureInfo.InvariantCulture)
             {
                 HasHeaderRecord = true
-            }))
+            });
+            await csv.ReadAsync();
+            csv.ReadHeader();
+            var fileHeaders = csv.HeaderRecord?.Select(NormalizeHeader).ToList();
+            // Remove trailing empty headers.
+            while (fileHeaders != null && fileHeaders.Count > 0 && string.IsNullOrEmpty(fileHeaders.Last()))
             {
-                await csv.ReadAsync();
-                csv.ReadHeader();
-                var fileHeaders = csv.HeaderRecord?.Select(NormalizeHeader).ToList();
-                // Remove trailing empty headers.
-                while (fileHeaders != null && fileHeaders.Count > 0 && string.IsNullOrEmpty(fileHeaders.Last()))
-                {
-                    fileHeaders.RemoveAt(fileHeaders.Count - 1);
-                }
-                if (fileHeaders == null || !fileHeaders.SequenceEqual(expectedHeaders, StringComparer.OrdinalIgnoreCase))
-                {
-                    return false;
-                }
+                fileHeaders.RemoveAt(fileHeaders.Count - 1);
+            }
+            if (fileHeaders == null || !fileHeaders.SequenceEqual(expectedHeaders, StringComparer.OrdinalIgnoreCase))
+            {
+                return false;
             }
         }
         else if (fileExtension == ".xlsx")
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-            using (var stream = new MemoryStream())
+            using var stream = new MemoryStream();
+            file.CopyTo(stream);
+            using var package = new ExcelPackage(stream);
+            var worksheet = package.Workbook.Worksheets[0];
+            int colCount = worksheet.Dimension.Columns;
+            var fileHeaders = new List<string>();
+            for (int col = 1; col <= colCount; col++)
             {
-                file.CopyTo(stream);
-                using (var package = new ExcelPackage(stream))
-                {
-                    var worksheet = package.Workbook.Worksheets[0];
-                    int colCount = worksheet.Dimension.Columns;
-                    var fileHeaders = new List<string>();
-                    for (int col = 1; col <= colCount; col++)
-                    {
-                        fileHeaders.Add(NormalizeHeader(worksheet.Cells[1, col].Text));
-                    }
-                    while (fileHeaders.Count > 0 && string.IsNullOrEmpty(fileHeaders.Last()))
-                    {
-                        fileHeaders.RemoveAt(fileHeaders.Count - 1);
-                    }
-                    if (!fileHeaders.SequenceEqual(expectedHeaders, StringComparer.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
-                }
+                fileHeaders.Add(NormalizeHeader(worksheet.Cells[1, col].Text));
+            }
+            while (fileHeaders.Count > 0 && string.IsNullOrEmpty(fileHeaders.Last()))
+            {
+                fileHeaders.RemoveAt(fileHeaders.Count - 1);
+            }
+            if (!fileHeaders.SequenceEqual(expectedHeaders, StringComparer.OrdinalIgnoreCase))
+            {
+                return false;
             }
         }
         return true;
@@ -334,7 +328,210 @@ public class UploadFileController : Controller
         }
     }
 
-    
+    #region File Processing Methods
+
+    private async Task<int> ProcessCourseraSpecializationCsvData(IFormFile file)
+    {
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            HasHeaderRecord = true,
+            HeaderValidated = null,
+            MissingFieldFound = null
+        };
+        using var streamReader = new StreamReader(file.OpenReadStream());
+        using var csv = new CsvReader(streamReader, config);
+        csv.Context.RegisterClassMap<ExcelDataCourseraSpecializationMap>();
+        var dataList = new List<ExcelDataCourseraSpecialization>();
+        var fileKeys = new HashSet<string>();
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+        await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraSpecialization>())
+        {
+            // Set defaults as needed.
+            record.EnrollmentSource ??= "Unknown";
+            record.ProgramName ??= "Not Specified";
+            record.LocationRegion ??= "Not Specified";
+            record.AccountId = currentAccountId;
+            // Remove AccountId from the composite key.
+            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
+            }
+            bool exists = await _context.ExcelDataCourseraSpecialization.AnyAsync(r =>
+                r.Email == record.Email &&
+                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId)
+            );
+            if (exists)
+                dbDuplicateCount++;
+            else
+                dataList.Add(record);
+        }
+        _context.ExcelDataCourseraSpecialization.AddRange(dataList);
+        await _context.SaveChangesAsync();
+        return dbDuplicateCount + fileDuplicateCount;
+    }
+
+    private async Task<int> ProcessCourseraSpecializationXlsxData(IFormFile file)
+    {
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+        using var package = new ExcelPackage(stream);
+        var worksheet = package.Workbook.Worksheets[0];
+        int rowCount = worksheet.Dimension.Rows;
+        var dataList = new List<ExcelDataCourseraSpecialization>();
+        var fileKeys = new HashSet<string>();
+        // Process rows starting at row 2 (header is in row 1).
+        for (int row = 2; row <= rowCount; row++)
+        {
+            var record = new ExcelDataCourseraSpecialization
+            {
+                Name = worksheet.Cells[row, 1].Text,
+                Email = worksheet.Cells[row, 2].Text,
+                ExternalId = worksheet.Cells[row, 3].Text,
+                Specialization = worksheet.Cells[row, 4].Text,
+                SpecializationSlug = worksheet.Cells[row, 5].Text,
+                University = worksheet.Cells[row, 6].Text,
+                EnrollmentTime = DateTime.TryParse(worksheet.Cells[row, 7].Text, out var enrollmentTime)
+                                  ? enrollmentTime : (DateTime?)null,
+                LastSpecializationActivityTime = DateTime.TryParse(worksheet.Cells[row, 8].Text, out var lastActivity)
+                                  ? lastActivity : (DateTime?)null,
+                CompletedCourses = int.TryParse(worksheet.Cells[row, 9].Text, out var completedCourses)
+                                  ? completedCourses : (int?)null,
+                CoursesInSpecialization = int.TryParse(worksheet.Cells[row, 10].Text, out var coursesInSpec)
+                                  ? coursesInSpec : (int?)null,
+                Completed = worksheet.Cells[row, 11].Text,
+                RemovedFromProgram = worksheet.Cells[row, 12].Text,
+                ProgramSlug = worksheet.Cells[row, 13].Text,
+                ProgramName = worksheet.Cells[row, 14].Text,
+                EnrollmentSource = worksheet.Cells[row, 15].Text,
+                SpecializationCompletionTime = DateTime.TryParse(worksheet.Cells[row, 16].Text, out var specCompletion)
+                                  ? specCompletion : (DateTime?)null,
+                SpecializationCertificateURL = worksheet.Cells[row, 17].Text,
+                JobTitle = worksheet.Cells[row, 18].Text,
+                JobType = worksheet.Cells[row, 19].Text,
+                LocationCity = worksheet.Cells[row, 20].Text,
+                LocationRegion = worksheet.Cells[row, 21].Text,
+                LocationCountry = worksheet.Cells[row, 22].Text,
+                AccountId = currentAccountId
+            };
+            // Remove AccountId from the duplicate key.
+            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
+            }
+            bool exists = await _context.ExcelDataCourseraSpecialization.AnyAsync(r =>
+                r.Email == record.Email &&
+                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId)
+            );
+            if (exists)
+                dbDuplicateCount++;
+            else
+                dataList.Add(record);
+        }
+        _context.ExcelDataCourseraSpecialization.AddRange(dataList);
+        await _context.SaveChangesAsync();
+        return dbDuplicateCount + fileDuplicateCount;
+    }
+
+    private async Task<int> ProcessCourseraMembershipCsvData(IFormFile file)
+    {
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            HasHeaderRecord = true,
+            HeaderValidated = null,
+            MissingFieldFound = null
+        };
+        using var streamReader = new StreamReader(file.OpenReadStream());
+        using var csv = new CsvReader(streamReader, config);
+        csv.Context.RegisterClassMap<ExcelDataCourseraMembershipReportMap>();
+        var dataList = new List<ExcelDataCourseraMembershipReport>();
+        var fileKeys = new HashSet<string>();
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+        await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraMembershipReport>())
+        {
+            record.AccountId = currentAccountId;
+            // Remove AccountId from the composite key.
+            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
+            }
+            bool exists = await _context.ExcelDataCourseraMembershipReports.AnyAsync(r =>
+                r.Email == record.Email &&
+                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId)
+            );
+            if (!exists)
+                dataList.Add(record);
+            else
+                dbDuplicateCount++;
+        }
+        _context.ExcelDataCourseraMembershipReports.AddRange(dataList);
+        await _context.SaveChangesAsync();
+        return dbDuplicateCount + fileDuplicateCount;
+    }
+
+    private async Task<int> ProcessCourseraMembershipXlsxData(IFormFile file)
+    {
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+        using var package = new ExcelPackage(stream);
+        var worksheet = package.Workbook.Worksheets[0];
+        int rowCount = worksheet.Dimension.Rows;
+        var dataList = new List<ExcelDataCourseraMembershipReport>();
+        var fileKeys = new HashSet<string>();
+        for (int row = 2; row <= rowCount; row++)
+        {
+            var record = new ExcelDataCourseraMembershipReport
+            {
+                Name = worksheet.Cells[row, 1].Text,
+                Email = worksheet.Cells[row, 2].Text,
+                ExternalId = worksheet.Cells[row, 3].Text,
+                ProgramName = worksheet.Cells[row, 4].Text,
+                ProgramSlug = worksheet.Cells[row, 5].Text,
+                EnrolledCourses = int.TryParse(worksheet.Cells[row, 6].Text, out var enrolledCourses) ? enrolledCourses : (int?)null,
+                CompletedCourses = int.TryParse(worksheet.Cells[row, 7].Text, out var completedCourses) ? completedCourses : (int?)null,
+                MemberState = worksheet.Cells[row, 8].Text,
+                JoinDate = DateTime.TryParse(worksheet.Cells[row, 9].Text, out var joinDate) ? joinDate : (DateTime?)null,
+                InvitationDate = DateTime.TryParse(worksheet.Cells[row, 10].Text, out var invitationDate) ? invitationDate : (DateTime?)null,
+                LatestProgramActivityDate = DateTime.TryParse(worksheet.Cells[row, 11].Text, out var latestActivityDate) ? latestActivityDate : (DateTime?)null,
+                JobTitle = worksheet.Cells[row, 12].Text,
+                JobType = worksheet.Cells[row, 13].Text,
+                LocationCity = worksheet.Cells[row, 14].Text,
+                LocationRegion = worksheet.Cells[row, 15].Text,
+                LocationCountry = worksheet.Cells[row, 16].Text,
+                AccountId = currentAccountId
+            };
+            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}";
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
+            }
+            bool exists = await _context.ExcelDataCourseraMembershipReports.AnyAsync(r =>
+                r.Email == record.Email &&
+                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId)
+            );
+            if (!exists)
+                dataList.Add(record);
+            else
+                dbDuplicateCount++;
+        }
+        _context.ExcelDataCourseraMembershipReports.AddRange(dataList);
+        await _context.SaveChangesAsync();
+        return dbDuplicateCount + fileDuplicateCount;
+    }
 
     private async Task<int> ProcessCourseraUsageCsvData(IFormFile file)
     {
@@ -346,19 +543,17 @@ public class UploadFileController : Controller
             MissingFieldFound = null
         };
 
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
         using var streamReader = new StreamReader(file.OpenReadStream());
         using var csv = new CsvReader(streamReader, config);
         csv.Context.RegisterClassMap<ExcelDataCourseraUsageReportMap>();
         var dataList = new List<ExcelDataCourseraUsageReport>();
         var fileKeys = new HashSet<string>();
 
-        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
-
         await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraUsageReport>())
         {
             record.AccountId = currentAccountId;
-
-            // Build a composite key from all columns to check duplicates.
+            // Build a composite key without AccountId.
             string key = string.Join("|", new string[]
             {
                 record.Name?.Trim() ?? "",
@@ -388,16 +583,13 @@ public class UploadFileController : Controller
                 record.JobType?.Trim() ?? "",
                 record.LocationCity?.Trim() ?? "",
                 record.LocationRegion?.Trim() ?? "",
-                record.LocationCountry?.Trim() ?? "",
-                record.AccountId.ToString()
+                record.LocationCountry?.Trim() ?? ""
             });
-
             if (!fileKeys.Add(key))
             {
                 fileDuplicateCount++;
                 continue;
             }
-
             bool exists = await _context.ExcelDataCourseraUsageReports.AnyAsync(r =>
                 r.Name == record.Name &&
                 r.Email == record.Email &&
@@ -426,16 +618,13 @@ public class UploadFileController : Controller
                 r.JobType == record.JobType &&
                 r.LocationCity == record.LocationCity &&
                 r.LocationRegion == record.LocationRegion &&
-                r.LocationCountry == record.LocationCountry &&
-                r.AccountId == currentAccountId
+                r.LocationCountry == record.LocationCountry
             );
-
             if (exists)
                 dbDuplicateCount++;
             else
                 dataList.Add(record);
         }
-
         _context.ExcelDataCourseraUsageReports.AddRange(dataList);
         await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
@@ -446,7 +635,6 @@ public class UploadFileController : Controller
         int dbDuplicateCount = 0, fileDuplicateCount = 0;
         OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
         int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
-
         using var stream = new MemoryStream();
         await file.CopyToAsync(stream);
         using var package = new ExcelPackage(stream);
@@ -454,7 +642,6 @@ public class UploadFileController : Controller
         int rowCount = worksheet.Dimension.Rows;
         var dataList = new List<ExcelDataCourseraUsageReport>();
         var fileKeys = new HashSet<string>();
-
         for (int row = 2; row <= rowCount; row++)
         {
             var record = new ExcelDataCourseraUsageReport
@@ -489,7 +676,7 @@ public class UploadFileController : Controller
                 LocationCountry = worksheet.Cells[row, 28].Text,
                 AccountId = currentAccountId
             };
-
+            // Build composite key without including AccountId.
             string key = string.Join("|", new string[]
             {
                 record.Name?.Trim() ?? "",
@@ -519,16 +706,13 @@ public class UploadFileController : Controller
                 record.JobType?.Trim() ?? "",
                 record.LocationCity?.Trim() ?? "",
                 record.LocationRegion?.Trim() ?? "",
-                record.LocationCountry?.Trim() ?? "",
-                record.AccountId.ToString()
+                record.LocationCountry?.Trim() ?? ""
             });
-
             if (!fileKeys.Add(key))
             {
                 fileDuplicateCount++;
                 continue;
             }
-
             bool exists = await _context.ExcelDataCourseraUsageReports.AnyAsync(r =>
                 r.Name == record.Name &&
                 r.Email == record.Email &&
@@ -557,16 +741,13 @@ public class UploadFileController : Controller
                 r.JobType == record.JobType &&
                 r.LocationCity == record.LocationCity &&
                 r.LocationRegion == record.LocationRegion &&
-                r.LocationCountry == record.LocationCountry &&
-                r.AccountId == currentAccountId
+                r.LocationCountry == record.LocationCountry
             );
-
             if (exists)
                 dbDuplicateCount++;
             else
                 dataList.Add(record);
         }
-
         _context.ExcelDataCourseraUsageReports.AddRange(dataList);
         await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
@@ -581,35 +762,29 @@ public class UploadFileController : Controller
             HeaderValidated = null,
             MissingFieldFound = null
         };
-
         using var streamReader = new StreamReader(file.OpenReadStream());
         using var csv = new CsvReader(streamReader, config);
         csv.Context.RegisterClassMap<ExcelDataCourseraPivotLocationCityReportMap>();
         var dataList = new List<ExcelDataCourseraPivotLocationCityReport>();
         var fileKeys = new HashSet<string>();
-
         int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
-
         await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraPivotLocationCityReport>())
         {
             record.AccountId = currentAccountId;
-            string key = record.LocationCity?.Trim();
+            string key = record.LocationCity?.Trim(); // Composite key excludes account id.
             if (!fileKeys.Add(key))
             {
                 fileDuplicateCount++;
                 continue;
             }
-
             bool exists = await _context.ExcelDataCourseraPivotLocationCityReports.AnyAsync(r =>
-                r.LocationCity == record.LocationCity &&
-                r.AccountId == currentAccountId
+                r.LocationCity == record.LocationCity
             );
             if (!exists)
                 dataList.Add(record);
             else
                 dbDuplicateCount++;
         }
-
         _context.ExcelDataCourseraPivotLocationCityReports.AddRange(dataList);
         await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
@@ -620,15 +795,13 @@ public class UploadFileController : Controller
         int dbDuplicateCount = 0, fileDuplicateCount = 0;
         OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
         int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
-
         using var stream = new MemoryStream();
         await file.CopyToAsync(stream);
         using var package = new ExcelPackage(stream);
-        var worksheet = package.Workbook.Worksheets[0]; // Assume row 1 contains headers; start from row 2.
+        var worksheet = package.Workbook.Worksheets[0]; // Assume row 1 contains headers.
         int rowCount = worksheet.Dimension.Rows;
         var dataList = new List<ExcelDataCourseraPivotLocationCityReport>();
         var fileKeys = new HashSet<string>();
-
         for (int row = 2; row <= rowCount; row++)
         {
             var record = new ExcelDataCourseraPivotLocationCityReport
@@ -644,253 +817,21 @@ public class UploadFileController : Controller
                 DeletedMembers = int.TryParse(worksheet.Cells[row, 9].Text, out var deletedMembers) ? deletedMembers : (int?)null,
                 AccountId = currentAccountId
             };
-
-            string key = record.LocationCity?.Trim();
+            string key = record.LocationCity?.Trim(); // Duplicate key does not include account id.
             if (!fileKeys.Add(key))
             {
                 fileDuplicateCount++;
                 continue;
             }
-
             bool exists = await _context.ExcelDataCourseraPivotLocationCityReports.AnyAsync(r =>
-                r.LocationCity == record.LocationCity &&
-                r.AccountId == currentAccountId
+                r.LocationCity == record.LocationCity
             );
             if (!exists)
                 dataList.Add(record);
             else
                 dbDuplicateCount++;
         }
-
         _context.ExcelDataCourseraPivotLocationCityReports.AddRange(dataList);
-        await _context.SaveChangesAsync();
-        return dbDuplicateCount + fileDuplicateCount;
-    }
-
-    private async Task<int> ProcessCourseraMembershipCsvData(IFormFile file)
-    {
-        int dbDuplicateCount = 0, fileDuplicateCount = 0;
-        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-        {
-            HasHeaderRecord = true,
-            HeaderValidated = null,
-            MissingFieldFound = null
-        };
-
-        using var streamReader = new StreamReader(file.OpenReadStream());
-        using var csv = new CsvReader(streamReader, config);
-        csv.Context.RegisterClassMap<ExcelDataCourseraMembershipReportMap>();
-        var dataList = new List<ExcelDataCourseraMembershipReport>();
-        var fileKeys = new HashSet<string>();
-
-        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
-
-        await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraMembershipReport>())
-        {
-            record.AccountId = currentAccountId;
-            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}|{record.AccountId}";
-            if (!fileKeys.Add(key))
-            {
-                fileDuplicateCount++;
-                continue;
-            }
-
-            bool exists = await _context.ExcelDataCourseraMembershipReports.AnyAsync(r =>
-                r.Email == record.Email &&
-                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId) &&
-                r.AccountId == currentAccountId
-            );
-            if (!exists)
-                dataList.Add(record);
-            else
-                dbDuplicateCount++;
-        }
-
-        _context.ExcelDataCourseraMembershipReports.AddRange(dataList);
-        await _context.SaveChangesAsync();
-        return dbDuplicateCount + fileDuplicateCount;
-    }
-
-    private async Task<int> ProcessCourseraMembershipXlsxData(IFormFile file)
-    {
-        int dbDuplicateCount = 0, fileDuplicateCount = 0;
-        OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
-        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
-
-        using var stream = new MemoryStream();
-        await file.CopyToAsync(stream);
-        using var package = new ExcelPackage(stream);
-        var worksheet = package.Workbook.Worksheets[0];
-        int rowCount = worksheet.Dimension.Rows;
-        var dataList = new List<ExcelDataCourseraMembershipReport>();
-        var fileKeys = new HashSet<string>();
-
-        for (int row = 2; row <= rowCount; row++)
-        {
-            var record = new ExcelDataCourseraMembershipReport
-            {
-                Name = worksheet.Cells[row, 1].Text,
-                Email = worksheet.Cells[row, 2].Text,
-                ExternalId = worksheet.Cells[row, 3].Text,
-                ProgramName = worksheet.Cells[row, 4].Text,
-                ProgramSlug = worksheet.Cells[row, 5].Text,
-                EnrolledCourses = int.TryParse(worksheet.Cells[row, 6].Text, out var enrolledCourses) ? enrolledCourses : (int?)null,
-                CompletedCourses = int.TryParse(worksheet.Cells[row, 7].Text, out var completedCourses) ? completedCourses : (int?)null,
-                MemberState = worksheet.Cells[row, 8].Text,
-                JoinDate = DateTime.TryParse(worksheet.Cells[row, 9].Text, out var joinDate) ? joinDate : (DateTime?)null,
-                InvitationDate = DateTime.TryParse(worksheet.Cells[row, 10].Text, out var invitationDate) ? invitationDate : (DateTime?)null,
-                LatestProgramActivityDate = DateTime.TryParse(worksheet.Cells[row, 11].Text, out var latestActivityDate) ? latestActivityDate : (DateTime?)null,
-                JobTitle = worksheet.Cells[row, 12].Text,
-                JobType = worksheet.Cells[row, 13].Text,
-                LocationCity = worksheet.Cells[row, 14].Text,
-                LocationRegion = worksheet.Cells[row, 15].Text,
-                LocationCountry = worksheet.Cells[row, 16].Text,
-                AccountId = currentAccountId
-            };
-
-            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}|{record.AccountId}";
-            if (!fileKeys.Add(key))
-            {
-                fileDuplicateCount++;
-                continue;
-            }
-
-            bool exists = await _context.ExcelDataCourseraMembershipReports.AnyAsync(r =>
-                r.Email == record.Email &&
-                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId) &&
-                r.AccountId == currentAccountId
-            );
-            if (!exists)
-                dataList.Add(record);
-            else
-                dbDuplicateCount++;
-        }
-
-        _context.ExcelDataCourseraMembershipReports.AddRange(dataList);
-        await _context.SaveChangesAsync();
-        return dbDuplicateCount + fileDuplicateCount;
-    }
-    private async Task<int> ProcessCourseraSpecializationXlsxData(IFormFile file)
-    {
-        int dbDuplicateCount = 0, fileDuplicateCount = 0;
-        OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
-
-        // Get the current user's AccountId.
-        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
-
-        using var stream = new MemoryStream();
-        await file.CopyToAsync(stream);
-        using var package = new ExcelPackage(stream);
-        var worksheet = package.Workbook.Worksheets[0];
-        int rowCount = worksheet.Dimension.Rows;
-        var dataList = new List<ExcelDataCourseraSpecialization>();
-        var fileKeys = new HashSet<string>();
-
-        // Assuming row 1 contains headers, start from row 2.
-        for (int row = 2; row <= rowCount; row++)
-        {
-            var record = new ExcelDataCourseraSpecialization
-            {
-                Name = worksheet.Cells[row, 1].Text,
-                Email = worksheet.Cells[row, 2].Text,
-                ExternalId = worksheet.Cells[row, 3].Text,
-                Specialization = worksheet.Cells[row, 4].Text,
-                SpecializationSlug = worksheet.Cells[row, 5].Text,
-                University = worksheet.Cells[row, 6].Text,
-                EnrollmentTime = DateTime.TryParse(worksheet.Cells[row, 7].Text, out var enrollmentTime)
-                                    ? enrollmentTime : (DateTime?)null,
-                LastSpecializationActivityTime = DateTime.TryParse(worksheet.Cells[row, 8].Text, out var lastActivity)
-                                    ? lastActivity : (DateTime?)null,
-                CompletedCourses = int.TryParse(worksheet.Cells[row, 9].Text, out var completedCourses)
-                                    ? completedCourses : (int?)null,
-                CoursesInSpecialization = int.TryParse(worksheet.Cells[row, 10].Text, out var coursesInSpec)
-                                    ? coursesInSpec : (int?)null,
-                Completed = worksheet.Cells[row, 11].Text,
-                RemovedFromProgram = worksheet.Cells[row, 12].Text,
-                ProgramSlug = worksheet.Cells[row, 13].Text,
-                ProgramName = worksheet.Cells[row, 14].Text,
-                EnrollmentSource = worksheet.Cells[row, 15].Text,
-                SpecializationCompletionTime = DateTime.TryParse(worksheet.Cells[row, 16].Text, out var specCompletion)
-                                    ? specCompletion : (DateTime?)null,
-                SpecializationCertificateURL = worksheet.Cells[row, 17].Text,
-                JobTitle = worksheet.Cells[row, 18].Text,
-                JobType = worksheet.Cells[row, 19].Text,
-                LocationCity = worksheet.Cells[row, 20].Text,
-                LocationRegion = worksheet.Cells[row, 21].Text,
-                LocationCountry = worksheet.Cells[row, 22].Text,
-                AccountId = currentAccountId
-            };
-
-            // Generate a composite key for duplicate checking.
-            // Here we use Email, ExternalId, and AccountId (adjust as needed).
-            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}|{record.AccountId}";
-            if (!fileKeys.Add(key))
-            {
-                fileDuplicateCount++;
-                continue;
-            }
-
-            bool exists = await _context.ExcelDataCourseraSpecialization.AnyAsync(r =>
-                r.Email == record.Email &&
-                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId) &&
-                r.AccountId == currentAccountId
-            );
-
-            if (exists)
-                dbDuplicateCount++;
-            else
-                dataList.Add(record);
-        }
-
-        _context.ExcelDataCourseraSpecialization.AddRange(dataList);
-        await _context.SaveChangesAsync();
-        return dbDuplicateCount + fileDuplicateCount;
-    }
-    private async Task<int> ProcessCourseraSpecializationCsvData(IFormFile file)
-    {
-        int dbDuplicateCount = 0, fileDuplicateCount = 0;
-        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-        {
-            HasHeaderRecord = true,
-            HeaderValidated = null,
-            MissingFieldFound = null
-        };
-
-        using var streamReader = new StreamReader(file.OpenReadStream());
-        using var csv = new CsvReader(streamReader, config);
-        csv.Context.RegisterClassMap<ExcelDataCourseraSpecializationMap>();
-        var dataList = new List<ExcelDataCourseraSpecialization>();
-        var fileKeys = new HashSet<string>();
-
-        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
-
-        await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraSpecialization>())
-        {
-            // Set default values if needed.
-            record.EnrollmentSource ??= "Unknown";
-            record.ProgramName ??= "Not Specified";
-            record.LocationRegion ??= "Not Specified";
-            record.AccountId = currentAccountId;
-            // Generate a unique key based on Email and ExternalId.
-            string key = $"{record.Email?.Trim()}|{record.ExternalId?.Trim()}|{record.AccountId}";
-            if (!fileKeys.Add(key))
-            {
-                fileDuplicateCount++;
-                continue;
-            }
-
-            bool exists = await _context.ExcelDataCourseraSpecialization.AnyAsync(r =>
-                r.Email == record.Email &&
-                (string.IsNullOrEmpty(record.ExternalId) || r.ExternalId == record.ExternalId) &&
-                r.AccountId == currentAccountId
-            );
-            if (!exists)
-                dataList.Add(record);
-            else
-                dbDuplicateCount++;
-        }
-
-        _context.ExcelDataCourseraSpecialization.AddRange(dataList);
         await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
     }
@@ -904,40 +845,33 @@ public class UploadFileController : Controller
             HeaderValidated = null,
             MissingFieldFound = null
         };
-
         using var streamReader = new StreamReader(file.OpenReadStream());
         using var csv = new CsvReader(streamReader, config);
         csv.Context.RegisterClassMap<ExcelDataCognitoMasterListMap>();
         var dataList = new List<ExcelDataCognitoMasterList>();
         var fileKeys = new HashSet<string>();
-
         int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
-
         await foreach (var record in csv.GetRecordsAsync<ExcelDataCognitoMasterList>())
         {
             record.Name_Middle ??= "Not Provided";
             record.Address_Line2 ??= "N/A";
             record.AccountId = currentAccountId;
-            // Generate a unique key based on Name_First, Name_Last, and Phone.
-            string key = $"{record.Name_First?.Trim()}|{record.Name_Last?.Trim()}|{record.Phone?.Trim()}|{record.AccountId}";
+            string key = $"{record.Name_First?.Trim()}|{record.Name_Last?.Trim()}|{record.Phone?.Trim()}";
             if (!fileKeys.Add(key))
             {
                 fileDuplicateCount++;
                 continue;
             }
-
             bool exists = await _context.ExcelDataCognitoMasterList.AnyAsync(r =>
                 r.Name_First == record.Name_First &&
                 r.Name_Last == record.Name_Last &&
-                r.Phone == record.Phone &&
-                r.AccountId == currentAccountId
+                r.Phone == record.Phone
             );
             if (!exists)
                 dataList.Add(record);
             else
                 dbDuplicateCount++;
         }
-
         _context.ExcelDataCognitoMasterList.AddRange(dataList);
         await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
@@ -948,7 +882,6 @@ public class UploadFileController : Controller
         int dbDuplicateCount = 0, fileDuplicateCount = 0;
         OfficeOpenXml.ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
-
         using var stream = new MemoryStream();
         await file.CopyToAsync(stream);
         using var package = new ExcelPackage(stream);
@@ -956,7 +889,6 @@ public class UploadFileController : Controller
         int rowCount = worksheet.Dimension.Rows;
         var dataList = new List<ExcelDataCognitoMasterList>();
         var fileKeys = new HashSet<string>();
-
         for (int row = 2; row <= rowCount; row++)
         {
             var record = new ExcelDataCognitoMasterList
@@ -993,26 +925,22 @@ public class UploadFileController : Controller
                 Entry_DateUpdated = DateTime.TryParse(worksheet.Cells[row, 31].Text, out var dateUpdated) ? dateUpdated : (DateTime?)null,
                 AccountId = currentAccountId
             };
-
-            string key = $"{record.Name_First?.Trim()}|{record.Name_Last?.Trim()}|{record.Phone?.Trim()}|{record.AccountId}";
+            string key = $"{record.Name_First?.Trim()}|{record.Name_Last?.Trim()}|{record.Phone?.Trim()}";
             if (!fileKeys.Add(key))
             {
                 fileDuplicateCount++;
                 continue;
             }
-
             bool exists = await _context.ExcelDataCognitoMasterList.AnyAsync(r =>
                 r.Name_First == record.Name_First &&
                 r.Name_Last == record.Name_Last &&
-                r.Phone == record.Phone &&
-                r.AccountId == currentAccountId
+                r.Phone == record.Phone
             );
             if (!exists)
                 dataList.Add(record);
             else
                 dbDuplicateCount++;
         }
-
         _context.ExcelDataCognitoMasterList.AddRange(dataList);
         await _context.SaveChangesAsync();
         return dbDuplicateCount + fileDuplicateCount;
@@ -1020,8 +948,7 @@ public class UploadFileController : Controller
 
     private async Task<int> ProcessGoogleFormsVolunteerProgramCsvData(IFormFile file)
     {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
@@ -1029,7 +956,6 @@ public class UploadFileController : Controller
             MissingFieldFound = null
         };
 
-        // Add current account retrieval for GoogleForms.
         int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
 
         using (var streamReader = new StreamReader(file.OpenReadStream()))
@@ -1050,32 +976,23 @@ public class UploadFileController : Controller
                     : null;
                 record.MethodOfContact ??= "Unknown";
                 record.Comment ??= "No comment provided";
-                // **Add the current AccountId to the record.**
                 record.AccountId = currentAccountId;
-                // Generate a unique key for this record within the file.
                 string key = $"{record.Timestamp.ToString("o")}|{record.Mentor?.Trim()}|{record.Mentee?.Trim()}|{(record.Date.HasValue ? record.Date.Value.ToString("yyyy-MM-dd") : "")}";
                 if (!fileKeys.Add(key))
                 {
-                    // Duplicate within the file – count and skip it.
                     fileDuplicateCount++;
                     continue;
                 }
-                // Check for duplicates in the database.
                 bool exists = await _context.ExcelDataGoogleFormsVolunteerProgram.AnyAsync(r =>
                     r.Timestamp == record.Timestamp &&
                     r.Mentor == record.Mentor &&
                     r.Mentee == record.Mentee &&
-                    r.Date == record.Date &&
-                    r.AccountId == currentAccountId
+                    r.Date == record.Date
                 );
                 if (!exists)
-                {
                     dataList.Add(record);
-                }
                 else
-                {
                     dbDuplicateCount++;
-                }
             }
             _context.ExcelDataGoogleFormsVolunteerProgram.AddRange(dataList);
             await _context.SaveChangesAsync();
@@ -1085,27 +1002,20 @@ public class UploadFileController : Controller
 
     private async Task<int> ProcessGoogleFormsVolunteerProgramXlsxData(IFormFile file)
     {
-        int dbDuplicateCount = 0;
-        int fileDuplicateCount = 0;
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
-        // Add current account retrieval.
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        OfficeOpenXml.ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
-
         using (var stream = new MemoryStream())
         {
             await file.CopyToAsync(stream);
             using (var package = new ExcelPackage(stream))
             {
-                var worksheet = package.Workbook.Worksheets[0]; // Assume data is in the first worksheet.
+                var worksheet = package.Workbook.Worksheets[0];
                 int rowCount = worksheet.Dimension.Rows;
                 var dataList = new List<ExcelDataGoogleFormsVolunteerProgram>();
                 var fileKeys = new HashSet<string>();
-
-                // Loop from row 2 (assuming row 1 is the header).
                 for (int row = 2; row <= rowCount; row++)
                 {
-                    // Optionally, break if a key column (e.g. Mentor) is empty.
                     if (string.IsNullOrWhiteSpace(worksheet.Cells[row, 2].Text))
                     {
                         break;
@@ -1121,7 +1031,6 @@ public class UploadFileController : Controller
                     string time = worksheet.Cells[row, 5].Text;
                     string methodOfContact = worksheet.Cells[row, 6].Text;
                     string comment = worksheet.Cells[row, 7].Text;
-                    // Generate a unique key for this record within the file.
                     string key = $"{timestamp.ToString("o")}|{mentor.Trim()}|{mentee.Trim()}|{(date.HasValue ? date.Value.ToString("yyyy-MM-dd") : "")}";
                     if (!fileKeys.Add(key))
                     {
@@ -1137,25 +1046,18 @@ public class UploadFileController : Controller
                         Time = time,
                         MethodOfContact = string.IsNullOrWhiteSpace(methodOfContact) ? "Unknown" : methodOfContact,
                         Comment = string.IsNullOrWhiteSpace(comment) ? "No comment provided" : comment,
-                        // **Add the current AccountId to the record.**
                         AccountId = currentAccountId
                     };
-
                     bool exists = await _context.ExcelDataGoogleFormsVolunteerProgram.AnyAsync(r =>
                         r.Timestamp == record.Timestamp &&
                         r.Mentor == record.Mentor &&
                         r.Mentee == record.Mentee &&
-                        r.Date == record.Date &&
-                        r.AccountId == currentAccountId
+                        r.Date == record.Date
                     );
                     if (!exists)
-                    {
                         dataList.Add(record);
-                    }
                     else
-                    {
                         dbDuplicateCount++;
-                    }
                 }
                 _context.ExcelDataGoogleFormsVolunteerProgram.AddRange(dataList);
                 await _context.SaveChangesAsync();
@@ -1163,6 +1065,8 @@ public class UploadFileController : Controller
         }
         return dbDuplicateCount + fileDuplicateCount;
     }
+
+    #endregion
 
     public IActionResult UploadSuccess()
     {
