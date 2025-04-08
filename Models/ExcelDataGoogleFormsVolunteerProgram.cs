@@ -4,7 +4,7 @@
     {
         public int Id { get; set; } // Primary key
        
-
+        public int? AccountId { get; set; }
         public DateTime Timestamp { get; set; }
         public string Mentor { get; set; }
         public string Mentee { get; set; }

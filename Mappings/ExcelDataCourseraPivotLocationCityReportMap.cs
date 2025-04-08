@@ -7,7 +7,7 @@ namespace MBBS.Dashboard.web.Mappings
     {
         public ExcelDataCourseraPivotLocationCityReportMap()
         {
-            
+            Map(m => m.AccountId).Ignore();
             Map(m => m.LocationCity).Name("Location City");
             Map(m => m.CurrentMembers).Name("Current Members");
             Map(m => m.CurrentLearners).Name("Current Learners");

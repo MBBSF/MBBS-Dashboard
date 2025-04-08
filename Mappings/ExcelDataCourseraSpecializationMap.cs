@@ -5,7 +5,7 @@ public class ExcelDataCourseraSpecializationMap : ClassMap<ExcelDataCourseraSpec
 {
     public ExcelDataCourseraSpecializationMap()
     {
-       
+        Map(m => m.AccountId).Ignore();
         Map(m => m.Id).Ignore();
         Map(m => m.Name).Name("Name");
         Map(m => m.Email).Name("Email");
