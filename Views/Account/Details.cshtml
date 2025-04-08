@@ -1,0 +1,20 @@
+﻿@model MBBS.Dashboard.web.Models.Account
+@{
+    ViewData["Title"] = "Account Details";
+}
+<h2>Account Details</h2>
+<dl class="row">
+    <dt class="col-sm-3">Legal Name:</dt>
+    <dd class="col-sm-9">@Model.LegalName</dd>
+    <dt class="col-sm-3">Username:</dt>
+    <dd class="col-sm-9">@Model.Username</dd>
+    <dt class="col-sm-3">Email:</dt>
+    <dd class="col-sm-9">@Model.Email</dd>
+    <dt class="col-sm-3">User Role:</dt>
+    <dd class="col-sm-9">@Model.UserRole</dd>
+    <dt class="col-sm-3">Status:</dt>
+    <dd class="col-sm-9">@(Model.IsActive ? "Active" : "Inactive")</dd>
+</dl>
+<div>
+    <a class="btn btn-primary" asp-action="AccountList">Back to List</a>
+</div>

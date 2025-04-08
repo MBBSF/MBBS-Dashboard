@@ -70,8 +70,12 @@ namespace MBBS.Dashboard.web.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Implement your plain-text password change logic here.
-                // For example:
+                // Check if the current password entered matches the active account's password.
+                if (ActiveAccount.Password != model.CurrentPassword)
+                {
+                    ModelState.AddModelError("CurrentPassword", "Current password is incorrect.");
+                    return View(model);
+                }
                 ActiveAccount.Password = model.NewPassword; // Assuming NewPassword is provided.
                 _accountRepository.SaveAccount(ActiveAccount);
                 return View("PasswordChangeSuccessful");
@@ -86,12 +90,19 @@ namespace MBBS.Dashboard.web.Controllers
             {
                 return RedirectToAction("LogInPage");
             }
-            return View(ActiveAccount);
+            // Populate the view model with the current values.
+            var model = new EditAccountViewModel
+            {
+                Id = ActiveAccount.Id,
+                LegalName = ActiveAccount.LegalName,
+                Email = ActiveAccount.Email
+            };
+            return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditAccount(Account updatedAccount)
+        public IActionResult EditAccount(EditAccountViewModel model)
         {
             if (ActiveAccount == null)
             {
@@ -100,21 +111,21 @@ namespace MBBS.Dashboard.web.Controllers
 
             if (ModelState.IsValid)
             {
-                // Update only allowed fields.
-                ActiveAccount.LegalName = updatedAccount.LegalName;
-                ActiveAccount.Email = updatedAccount.Email;
-
-                if (!string.IsNullOrEmpty(updatedAccount.Password))
+                // Verify the provided current password.
+                if (ActiveAccount.Password != model.CurrentPassword)
                 {
-                    // Store the plain-text password directly.
-                    ActiveAccount.Password = updatedAccount.Password;
+                    ModelState.AddModelError("CurrentPassword", "Current password is incorrect.");
+                    return View(model);
                 }
+                // Update the account's legal name and email.
+                ActiveAccount.LegalName = model.LegalName;
+                ActiveAccount.Email = model.Email;
 
                 _accountRepository.SaveAccount(ActiveAccount);
                 TempData["SuccessMessage"] = "Account updated successfully!";
                 return RedirectToAction("AccountDetails");
             }
-            return View(updatedAccount);
+            return View(model);
         }
 
         public IActionResult ActivityLog()
@@ -207,6 +218,22 @@ namespace MBBS.Dashboard.web.Controllers
             return View("AccountSettings", acc);
         }
 
+        // New ADMIN-only action: Display account details for any account.
+        [HttpGet]
+        public IActionResult Details(int id)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AccessDenied");
+            }
+            var account = GetAccountById(id);
+            if (account == null)
+            {
+                return View("Error");
+            }
+            return View(account);
+        }
+
         // New ADMIN-ONLY action to toggle account active status.
         [HttpPost]
         public IActionResult SetAccountStatus(int id, bool isActive)
@@ -263,7 +290,7 @@ namespace MBBS.Dashboard.web.Controllers
         }
     }
 
-public class ActivityLog
+    public class ActivityLog
     {
         public int Id { get; set; }
         public int AccountId { get; set; }

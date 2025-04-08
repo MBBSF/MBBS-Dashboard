@@ -1,9 +1,9 @@
-﻿
-@model             Account
+﻿@model MBBS.Dashboard.web.Models.EditAccountViewModel
 
 <h2>Edit Account Information</h2>
 
 <form asp-action="EditAccount" method="post">
+    @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
 
     <div class="form-group">
@@ -19,9 +19,9 @@
     </div>
 
     <div class="form-group">
-        <label asp-for="Password"></label>
-        <input asp-for="Password" class="form-control" type="password" />
-        <span asp-validation-for="Password" class="text-danger"></span>
+        <label asp-for="CurrentPassword"></label>
+        <input asp-for="CurrentPassword" class="form-control" type="password" />
+        <span asp-validation-for="CurrentPassword" class="text-danger"></span>
     </div>
 
     <button type="submit" class="btn btn-primary">Save Changes</button>
