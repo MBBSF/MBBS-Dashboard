@@ -1,8 +1,6 @@
 ﻿using MBBS.Dashboard.web.Controllers;
 using System.Collections.Generic;
 
-namespace MBBS.Dashboard.web.Models
-{
     public class DashboardViewModel
     {
         public KpiData KpiData { get; set; }
