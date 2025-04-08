@@ -23,6 +23,7 @@ namespace MBBS.Dashboard.web.Models
         public string CurrentSortBy { get; set; }
         public string CurrentSortOrder { get; set; }
         public string SearchQuery { get; set; }
+        public string CurrentReportType { get; set; }
     }
 
     public class PlatformDataViewModel
@@ -71,6 +72,7 @@ namespace MBBS.Dashboard.web.Models
 
         public class CourseraMembershipReportViewModel
         {
+            public int Id { get; set; } // Added Id
             public string Name { get; set; }
             public string Email { get; set; }
             public string ProgramName { get; set; }
@@ -81,6 +83,7 @@ namespace MBBS.Dashboard.web.Models
 
         public class CourseraPivotLocationCityReportViewModel
         {
+            public int Id { get; set; } // Added Id
             public string LocationCity { get; set; }
             public int CurrentMembers { get; set; }
             public int CurrentLearners { get; set; }
@@ -91,6 +94,7 @@ namespace MBBS.Dashboard.web.Models
 
         public class CourseraUsageReportViewModel
         {
+            public int Id { get; set; } // Added Id
             public string Name { get; set; }
             public string Course { get; set; }
             public double? OverallProgress { get; set; }
