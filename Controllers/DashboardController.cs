@@ -1,6 +1,7 @@
 ﻿using MBBS.Dashboard.web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -31,15 +32,64 @@ namespace MBBS.Dashboard.web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> ViewDataByPlatform(int platformId, string sortBy, string sortOrder)
+        public async Task<IActionResult> ViewDataByPlatform(int platformId, string sortBy, string sortOrder, string searchQuery = null)
         {
             var viewModel = await GetDashboardViewModel();
             viewModel.PlatformId = platformId;
-            viewModel.PlatformData = await GetPlatformData(platformId);
+            await GetPlatformData(viewModel, platformId);
+            viewModel.SearchQuery = searchQuery;
+
+            if (!string.IsNullOrEmpty(searchQuery))
+            {
+                switch (platformId)
+                {
+                    case 1:
+                        viewModel.CourseraPlatformData = viewModel.CourseraPlatformData
+                            .Where(p => p.Name?.ToLower().Contains(searchQuery.ToLower()) == true ||
+                                       p.Email?.ToLower().Contains(searchQuery.ToLower()) == true ||
+                                       p.Specialization?.ToLower().Contains(searchQuery.ToLower()) == true ||
+                                       p.Completed?.ToLower().Contains(searchQuery.ToLower()) == true)
+                            .ToList();
+                        break;
+                    case 2:
+                        viewModel.CognitoPlatformData = viewModel.CognitoPlatformData
+                            .Where(p => p.Name_First?.ToLower().Contains(searchQuery.ToLower()) == true ||
+                                       p.Name_Last?.ToLower().Contains(searchQuery.ToLower()) == true ||
+                                       p.Phone?.ToLower().Contains(searchQuery.ToLower()) == true ||
+                                       p.IntendedMajor?.ToLower().Contains(searchQuery.ToLower()) == true)
+                            .ToList();
+                        break;
+                    case 3:
+                        viewModel.GoogleFormsPlatformData = viewModel.GoogleFormsPlatformData
+                            .Where(p => p.Mentor?.ToLower().Contains(searchQuery.ToLower()) == true ||
+                                       p.Mentee?.ToLower().Contains(searchQuery.ToLower()) == true ||
+                                       p.Date?.ToString().ToLower().Contains(searchQuery.ToLower()) == true ||
+                                       p.MethodOfContact?.ToLower().Contains(searchQuery.ToLower()) == true)
+                            .ToList();
+                        break;
+                }
+            }
 
             if (!string.IsNullOrEmpty(sortBy))
             {
-                viewModel.PlatformData = SortPlatformData(viewModel.PlatformData, sortBy, sortOrder);
+                switch (platformId)
+                {
+                    case 1:
+                        viewModel.CourseraPlatformData = sortOrder == "desc"
+                            ? viewModel.CourseraPlatformData.OrderByDescending(x => x.GetType().GetProperty(sortBy)?.GetValue(x)).ToList()
+                            : viewModel.CourseraPlatformData.OrderBy(x => x.GetType().GetProperty(sortBy)?.GetValue(x)).ToList();
+                        break;
+                    case 2:
+                        viewModel.CognitoPlatformData = sortOrder == "desc"
+                            ? viewModel.CognitoPlatformData.OrderByDescending(x => x.GetType().GetProperty(sortBy)?.GetValue(x)).ToList()
+                            : viewModel.CognitoPlatformData.OrderBy(x => x.GetType().GetProperty(sortBy)?.GetValue(x)).ToList();
+                        break;
+                    case 3:
+                        viewModel.GoogleFormsPlatformData = sortOrder == "desc"
+                            ? viewModel.GoogleFormsPlatformData.OrderByDescending(x => x.GetType().GetProperty(sortBy)?.GetValue(x)).ToList()
+                            : viewModel.GoogleFormsPlatformData.OrderBy(x => x.GetType().GetProperty(sortBy)?.GetValue(x)).ToList();
+                        break;
+                }
                 viewModel.CurrentSortOrder = sortOrder == "asc" ? "desc" : "asc";
                 viewModel.CurrentSortBy = sortBy;
             }
@@ -51,42 +101,45 @@ namespace MBBS.Dashboard.web.Controllers
         {
             var viewModel = await GetDashboardViewModel();
             viewModel.PlatformId = platformId;
+            await GetPlatformData(viewModel, platformId);
             return View("Dashboard", viewModel);
         }
 
-        private List<object> SortPlatformData(List<object> data, string sortBy, string sortOrder)
+        private async Task GetPlatformData(DashboardViewModel viewModel, int platformId)
         {
-            var sorted = data.OrderBy(x => 0); // default ordering
-
-            try
+            switch (platformId)
             {
-                sorted = sortOrder == "desc"
-                    ? data.OrderBy(x => x?.GetType().GetProperty(sortBy)?.GetValue(x, null))
-                    : data.OrderByDescending(x => x?.GetType().GetProperty(sortBy)?.GetValue(x, null));
+                case 1:
+                    viewModel.CourseraPlatformData = await _context.ExcelDataCourseraSpecialization
+                        .Select(x => new PlatformDataViewModel.CourseraSpecializationData
+                        {
+                            Name = x.Name,
+                            Email = x.Email,
+                            Specialization = x.Specialization,
+                            Completed = x.Completed
+                        }).ToListAsync();
+                    break;
+                case 2:
+                    viewModel.CognitoPlatformData = await _context.ExcelDataCognitoMasterList
+                        .Select(x => new PlatformDataViewModel.CognitoData
+                        {
+                            Name_First = x.Name_First,
+                            Name_Last = x.Name_Last,
+                            Phone = x.Phone,
+                            IntendedMajor = x.IntendedMajor
+                        }).ToListAsync();
+                    break;
+                case 3:
+                    viewModel.GoogleFormsPlatformData = await _context.ExcelDataGoogleFormsVolunteerProgram
+                        .Select(x => new PlatformDataViewModel.GoogleFormsData
+                        {
+                            Mentor = x.Mentor,
+                            Mentee = x.Mentee,
+                            Date = x.Date,
+                            MethodOfContact = x.MethodOfContact
+                        }).ToListAsync();
+                    break;
             }
-            catch
-            {
-                // log or ignore
-            }
-
-            return sorted.ToList();
-        }
-
-        private async Task<List<object>> GetPlatformData(int platformId)
-        {
-            return platformId switch
-            {
-                1 => await _context.ExcelDataCourseraSpecialization
-                            .Select(x => new { x.Name, x.Email, x.Specialization, x.Completed })
-                            .Cast<object>().ToListAsync(),
-                2 => await _context.ExcelDataCognitoMasterList
-                            .Select(x => new { x.Name_First, x.Name_Last, x.Phone, x.IntendedMajor })
-                            .Cast<object>().ToListAsync(),
-                3 => await _context.ExcelDataGoogleFormsVolunteerProgram
-                            .Select(x => new { x.Mentor, x.Mentee, x.Date, x.MethodOfContact })
-                            .Cast<object>().ToListAsync(),
-                _ => new List<object>()
-            };
         }
 
         private async Task<DashboardViewModel> GetDashboardViewModel()
@@ -151,15 +204,29 @@ namespace MBBS.Dashboard.web.Controllers
                 ScholarshipApplicationKPIs = scholarshipKPIs,
                 CourseraMembershipReports = membershipReports.Select(x => new KpiDataViewModel.CourseraMembershipReportViewModel
                 {
-                    MemberState = x.MemberState
+                    MemberState = x.MemberState,
+                    Name = x.Name,
+                    Email = x.Email,
+                    ProgramName = x.ProgramName,
+                    EnrolledCourses = x.EnrolledCourses ?? 0,
+                    CompletedCourses = x.CompletedCourses ?? 0
                 }).ToList(),
                 CourseraPivotLocationCityReports = pivotReports.Select(x => new KpiDataViewModel.CourseraPivotLocationCityReportViewModel
                 {
-                    // Map accordingly
+                    LocationCity = x.LocationCity,
+                    CurrentMembers = x.CurrentMembers ?? 0,
+                    CurrentLearners = x.CurrentLearners ?? 0,
+                    TotalEnrollments = x.TotalEnrollments ?? 0,
+                    TotalCompletedCourses = x.TotalCompletedCourses ?? 0,
+                    AverageProgress = (double?)x.AverageProgress
                 }).ToList(),
                 CourseraUsageReports = usageReports.Select(x => new KpiDataViewModel.CourseraUsageReportViewModel
                 {
-                    // Map accordingly
+                    Name = x.Name,
+                    Course = x.Course,
+                    OverallProgress = (double?)x.OverallProgress,
+                    Completed = x.Completed,
+                    EstimatedLearningHours = (double)(x.EstimatedLearningHours ?? 0)
                 }).ToList(),
                 CourseraData = courseraData,
                 CognitoData = cognitoData,

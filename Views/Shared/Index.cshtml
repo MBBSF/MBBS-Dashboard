@@ -1,30 +1,16 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Redirecting...";
 }
 
-
-<div class="text-center">
-    <h2>Welcome to the Marie Barney Boston Scholarship Foundation's Metrics Dashboard</h2>
-    
-    <body>
-        <p>
-        The Marie Barney Boston Scholarship Foundation (MBBSF) is dedicated to enhancing educational opportunities for disadvantaged youth by providing scholarships and resources to facilitate access to higher education. Established under the guidance of Dr. Brenda Boston-Hudson in honor of her mother, Dr. Marie Barney Boston, the foundation aims to empower students from underserved communities through educational support, leadership development, and community engagement. By focusing on closing knowledge gaps and promoting college attendance, MBBSF seeks to increase the number of professionals and doctoral candidates from diverse backgrounds, ultimately fostering positive change within communities and encouraging future generations to pursue academic and leadership excellence.
-        </p>
-        <p>
-            This website is a web-based dashboard that will streamline data organization and access
-            for the Marie Barney Boston Scholarship Foundation. It will integrate with their current software and database
-            systems.
-        </p>
-    </body>
-    <br/>
-    <div class="container button-container">
-        <a class="btn btn-primary text-white btn-sm" asp-controller="Account" asp-action="AccountCreation">Account Registration</a>
-    </div>
-
-    <!-- Added FAQ & Support button to navigate to the FAQ page for user support -abdel -->
-    <div class="container button-container">
-        <a class="btn btn-primary text-white btn-sm" asp-controller="Home" asp-action="FAQ">FAQ & Support</a>
-    </div>
-
-
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewData["Title"]</title>
+    <script type="text/javascript">
+        window.location.href = '@Url.Action("Index", "Dashboard")';
+    </script>
+</head>
+<body>
+    <p>Redirecting to dashboard...</p>
+</body>
+</html>

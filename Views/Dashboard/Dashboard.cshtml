@@ -12,6 +12,24 @@
 }
 else
 {
+    <!-- Search Bar -->
+    <div class="mb-4">
+        <form asp-action="ViewDataByPlatform" method="get" class="form-inline">
+            <input type="hidden" name="platformId" value="@Model.PlatformId" />
+            <div class="input-group w-100">
+                <input type="text" class="form-control" name="searchQuery"
+                       value="@Model.SearchQuery" placeholder="Search across all tables..." />
+                <button type="submit" class="btn btn-primary">Search</button>
+                @if (!string.IsNullOrEmpty(Model.SearchQuery))
+                {
+                    <a asp-action="ViewDataByPlatform"
+                       asp-route-platformId="@Model.PlatformId"
+                       class="btn btn-secondary ms-2">Clear</a>
+                }
+            </div>
+        </form>
+    </div>
+
     <h3>Key Performance Metrics</h3>
     <!-- Categorized KPIs Section -->
     <div class="row">
@@ -34,8 +52,7 @@ else
                         @{
                             var specializationItems = Model.GoogleCertificationKPIs.SpecializationDistribution
                             .AsEnumerable()
-                            .OrderByDescending(pair => pair.Value)
-                            ;
+                            .OrderByDescending(pair => pair.Value);
                         }
                         @foreach (var kvp in specializationItems)
                         {
@@ -91,9 +108,7 @@ else
                         @{
                             var sortedMajors = Model.ScholarshipApplicationKPIs.IntendedMajorDistribution
                             .AsEnumerable()
-                            .OrderByDescending(pair => pair.Value)
-                            ;
-
+                            .OrderByDescending(pair => pair.Value);
                         }
                         @foreach (var kvp in sortedMajors)
                         {
@@ -142,7 +157,10 @@ else
 
                 <ul class="nav nav-tabs" id="courseraReportsTab" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="membership-tab" data-bs-toggle="tab" data-bs-target="#membership" type="button" role="tab">Membership Report</button>
+                        <button class="nav-link active" id="specialization-tab" data-bs-toggle="tab" data-bs-target="#specialization" type="button" role="tab">Specialization Report</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="membership-tab" data-bs-toggle="tab" data-bs-target="#membership" type="button" role="tab">Membership Report</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="location-tab" data-bs-toggle="tab" data-bs-target="#location" type="button" role="tab">Location Report</button>
@@ -153,21 +171,46 @@ else
                 </ul>
 
                 <div class="tab-content" id="courseraReportsTabContent">
-                    <!-- Membership Report -->
-                    <div class="tab-pane fade show active" id="membership" role="tabpanel">
+                    <!-- Specialization Report -->
+                    <div class="tab-pane fade show active" id="specialization" role="tabpanel">
                         <table class="table table-striped mt-3">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Program</th>
-                                    <th>Enrolled Courses</th>
-                                    <th>Completed Courses</th>
-                                    <th>Status</th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="Name" asp-route-sortOrder="@(Model.CurrentSortOrder)">Name</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="Email" asp-route-sortOrder="@(Model.CurrentSortOrder)">Email</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="Specialization" asp-route-sortOrder="@(Model.CurrentSortOrder)">Specialization</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="Completed" asp-route-sortOrder="@(Model.CurrentSortOrder)">Completed</a></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var report in Model.CourseraMembershipReports)
+                                @foreach (var item in Model.CourseraPlatformData ?? new List<PlatformDataViewModel.CourseraSpecializationData>())
+                                {
+                                    <tr>
+                                        <td>@item.Name</td>
+                                        <td>@item.Email</td>
+                                        <td>@item.Specialization</td>
+                                        <td>@item.Completed</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Membership Report -->
+                    <div class="tab-pane fade" id="membership" role="tabpanel">
+                        <table class="table table-striped mt-3">
+                            <thead>
+                                <tr>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="Name" asp-route-sortOrder="@(Model.CurrentSortOrder)">Name</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="Email" asp-route-sortOrder="@(Model.CurrentSortOrder)">Email</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="ProgramName" asp-route-sortOrder="@(Model.CurrentSortOrder)">Program</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="EnrolledCourses" asp-route-sortOrder="@(Model.CurrentSortOrder)">Enrolled Courses</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="CompletedCourses" asp-route-sortOrder="@(Model.CurrentSortOrder)">Completed Courses</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="MemberState" asp-route-sortOrder="@(Model.CurrentSortOrder)">Status</a></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var report in Model.CourseraMembershipReports ?? new List<KpiDataViewModel.CourseraMembershipReportViewModel>())
                                 {
                                     <tr>
                                         <td>@report.Name</td>
@@ -187,16 +230,16 @@ else
                         <table class="table table-striped mt-3">
                             <thead>
                                 <tr>
-                                    <th>Location City</th>
-                                    <th>Current Members</th>
-                                    <th>Current Learners</th>
-                                    <th>Total Enrollments</th>
-                                    <th>Completed Courses</th>
-                                    <th>Avg Progress</th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="LocationCity" asp-route-sortOrder="@(Model.CurrentSortOrder)">Location City</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="CurrentMembers" asp-route-sortOrder="@(Model.CurrentSortOrder)">Current Members</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="CurrentLearners" asp-route-sortOrder="@(Model.CurrentSortOrder)">Current Learners</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="TotalEnrollments" asp-route-sortOrder="@(Model.CurrentSortOrder)">Total Enrollments</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="TotalCompletedCourses" asp-route-sortOrder="@(Model.CurrentSortOrder)">Completed Courses</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="AverageProgress" asp-route-sortOrder="@(Model.CurrentSortOrder)">Avg Progress</a></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var report in Model.CourseraPivotLocationCityReports)
+                                @foreach (var report in Model.CourseraPivotLocationCityReports ?? new List<KpiDataViewModel.CourseraPivotLocationCityReportViewModel>())
                                 {
                                     <tr>
                                         <td>@report.LocationCity</td>
@@ -216,15 +259,15 @@ else
                         <table class="table table-striped mt-3">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Course</th>
-                                    <th>Progress</th>
-                                    <th>Completed</th>
-                                    <th>Learning Hours</th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="Name" asp-route-sortOrder="@(Model.CurrentSortOrder)">Name</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="Course" asp-route-sortOrder="@(Model.CurrentSortOrder)">Course</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="OverallProgress" asp-route-sortOrder="@(Model.CurrentSortOrder)">Progress</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="Completed" asp-route-sortOrder="@(Model.CurrentSortOrder)">Completed</a></th>
+                                    <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-sortBy="EstimatedLearningHours" asp-route-sortOrder="@(Model.CurrentSortOrder)">Learning Hours</a></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var report in Model.CourseraUsageReports)
+                                @foreach (var report in Model.CourseraUsageReports ?? new List<KpiDataViewModel.CourseraUsageReportViewModel>())
                                 {
                                     <tr>
                                         <td>@report.Name</td>
@@ -244,20 +287,20 @@ else
                 <table class="table table-striped mt-3">
                     <thead>
                         <tr>
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Phone</th>
-                            <th>Intended Major</th>
+                            <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="Name_First" asp-route-sortOrder="@(Model.CurrentSortOrder)">First Name</a></th>
+                            <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="Name_Last" asp-route-sortOrder="@(Model.CurrentSortOrder)">Last Name</a></th>
+                            <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="Phone" asp-route-sortOrder="@(Model.CurrentSortOrder)">Phone</a></th>
+                            <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="IntendedMajor" asp-route-sortOrder="@(Model.CurrentSortOrder)">Intended Major</a></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var item in Model.PlatformData)
+                        @foreach (var item in Model.CognitoPlatformData ?? new List<PlatformDataViewModel.CognitoData>())
                         {
                             <tr>
-                                <td>@((item as dynamic).Name_First)</td>
-                                <td>@((item as dynamic).Name_Last)</td>
-                                <td>@((item as dynamic).Phone)</td>
-                                <td>@((item as dynamic).IntendedMajor)</td>
+                                <td>@item.Name_First</td>
+                                <td>@item.Name_Last</td>
+                                <td>@item.Phone</td>
+                                <td>@item.IntendedMajor</td>
                             </tr>
                         }
                     </tbody>
@@ -268,20 +311,20 @@ else
                 <table class="table table-striped mt-3">
                     <thead>
                         <tr>
-                            <th>Mentor</th>
-                            <th>Mentee</th>
-                            <th>Date</th>
-                            <th>Method of Contact</th>
+                            <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Mentor" asp-route-sortOrder="@(Model.CurrentSortOrder)">Mentor</a></th>
+                            <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Mentee" asp-route-sortOrder="@(Model.CurrentSortOrder)">Mentee</a></th>
+                            <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Date" asp-route-sortOrder="@(Model.CurrentSortOrder)">Date</a></th>
+                            <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="MethodOfContact" asp-route-sortOrder="@(Model.CurrentSortOrder)">Method of Contact</a></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var item in Model.PlatformData)
+                        @foreach (var item in Model.GoogleFormsPlatformData ?? new List<PlatformDataViewModel.GoogleFormsData>())
                         {
                             <tr>
-                                <td>@((item as dynamic).Mentor)</td>
-                                <td>@((item as dynamic).Mentee)</td>
-                                <td>@(((DateTime?)(item as dynamic).Date)?.ToString("d"))</td>
-                                <td>@((item as dynamic).MethodOfContact)</td>
+                                <td>@item.Mentor</td>
+                                <td>@item.Mentee</td>
+                                <td>@(item.Date?.ToString("d") ?? "N/A")</td>
+                                <td>@item.MethodOfContact</td>
                             </tr>
                         }
                     </tbody>
