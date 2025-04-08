@@ -17,9 +17,39 @@ namespace MBBS.Dashboard.web.Models
         public List<ExcelDataGoogleFormsVolunteerProgram> GoogleFormsData { get; set; }
         public List<ActivityLogViewModel> ActivityLogs { get; set; }
         public int PlatformId { get; set; }
-        public List<object> PlatformData { get; set; }
+        public List<PlatformDataViewModel.CourseraSpecializationData> CourseraPlatformData { get; set; }
+        public List<PlatformDataViewModel.CognitoData> CognitoPlatformData { get; set; }
+        public List<PlatformDataViewModel.GoogleFormsData> GoogleFormsPlatformData { get; set; }
         public string CurrentSortBy { get; set; }
         public string CurrentSortOrder { get; set; }
+        public string SearchQuery { get; set; }
+    }
+
+    public class PlatformDataViewModel
+    {
+        public class CourseraSpecializationData
+        {
+            public string Name { get; set; }
+            public string Email { get; set; }
+            public string Specialization { get; set; }
+            public string Completed { get; set; }
+        }
+
+        public class CognitoData
+        {
+            public string Name_First { get; set; }
+            public string Name_Last { get; set; }
+            public string Phone { get; set; }
+            public string IntendedMajor { get; set; }
+        }
+
+        public class GoogleFormsData
+        {
+            public string Mentor { get; set; }
+            public string Mentee { get; set; }
+            public DateTime? Date { get; set; }
+            public string MethodOfContact { get; set; }
+        }
     }
 
     public class KpiDataViewModel
