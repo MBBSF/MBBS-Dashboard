@@ -1,5 +1,6 @@
 using MBBS.Dashboard.web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,7 +12,8 @@ namespace MBBS.Dashboard.web.Controllers
         private readonly IAccountRepository _accountRepository;
         private readonly IActivityLogRepository _activityLogRepository;
 
-        // For demo purposes only. In a production app, use a proper authentication mechanism.
+        // For demo purposes only.
+        // In a production app, use a proper authentication mechanism.
         public static Account ActiveAccount;
 
         public AccountController(IAccountRepository accountRepository, IActivityLogRepository activityLogRepository)
@@ -33,7 +35,7 @@ namespace MBBS.Dashboard.web.Controllers
             return View(); // Create Views/Account/AccessDenied.cshtml
         }
 
-        // Utility methods
+        // Utility methods.
         public Account GetAccountById(int id)
         {
             return _accountRepository.Accounts.FirstOrDefault(acc => acc.Id == id);
@@ -47,7 +49,6 @@ namespace MBBS.Dashboard.web.Controllers
         // --------------------------
         // Actions accessible to all logged-in users:
         // --------------------------
-
         public IActionResult AccountDetails()
         {
             if (ActiveAccount == null)
@@ -69,7 +70,10 @@ namespace MBBS.Dashboard.web.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Implement password change logic here.
+                // Implement your plain-text password change logic here.
+                // For example:
+                ActiveAccount.Password = model.NewPassword; // Assuming NewPassword is provided.
+                _accountRepository.SaveAccount(ActiveAccount);
                 return View("PasswordChangeSuccessful");
             }
             return View(model);
@@ -102,7 +106,8 @@ namespace MBBS.Dashboard.web.Controllers
 
                 if (!string.IsNullOrEmpty(updatedAccount.Password))
                 {
-                    ActiveAccount.Password = _accountRepository.HashPassword(updatedAccount.Password);
+                    // Store the plain-text password directly.
+                    ActiveAccount.Password = updatedAccount.Password;
                 }
 
                 _accountRepository.SaveAccount(ActiveAccount);
@@ -118,7 +123,6 @@ namespace MBBS.Dashboard.web.Controllers
             {
                 return RedirectToAction("LogInPage");
             }
-
             var logs = _activityLogRepository.GetLogsForAccount(ActiveAccount.Id);
             return View(logs);
         }
@@ -126,7 +130,6 @@ namespace MBBS.Dashboard.web.Controllers
         // --------------------------
         // ADMIN-ONLY actions:
         // --------------------------
-
         public IActionResult AccountList()
         {
             if (!IsAdmin())
@@ -158,17 +161,16 @@ namespace MBBS.Dashboard.web.Controllers
                 return View("AccountCreation");
             }
 
-            // Here you could decide to allow the admin to set the role.
-            // For example, if the admin inputs "Admin" as the role in the form,
-            // it will be saved as such.
-            // If not provided, you might want to set a default:
+            // Allow the admin to set the role. If not provided, set a default.
             if (string.IsNullOrWhiteSpace(acc.UserRole))
             {
                 acc.UserRole = "User";
             }
 
-            // Hash the password before saving.
-            acc.Password = _accountRepository.HashPassword(acc.Password);
+            // Default new accounts are active.
+            acc.IsActive = true;
+
+            // Save the plain-text password directly.
             _accountRepository.SaveAccount(acc);
 
             return RedirectToAction("AccountList");
@@ -180,6 +182,7 @@ namespace MBBS.Dashboard.web.Controllers
             {
                 return RedirectToAction("AccessDenied");
             }
+
             var account = GetAccountById(id);
             if (account == null)
             {
@@ -204,47 +207,44 @@ namespace MBBS.Dashboard.web.Controllers
             return View("AccountSettings", acc);
         }
 
-        [HttpGet]
-        public IActionResult DeleteAccount()
-        {
-            if (!IsAdmin())
-            {
-                return RedirectToAction("AccessDenied");
-            }
-            return View();
-        }
-
+        // New ADMIN-ONLY action to toggle account active status.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAccount(DeleteAccount model)
+        public IActionResult SetAccountStatus(int id, bool isActive)
         {
             if (!IsAdmin())
             {
                 return RedirectToAction("AccessDenied");
             }
 
-            if (ModelState.IsValid)
+            var account = GetAccountById(id);
+            if (account == null)
             {
-                // Implement deletion logic.
-                // For example: var accountToDelete = GetAccountById(model.AccountId);
-                // if (accountToDelete != null) { /* remove account and save changes */ }
-
-                // For demonstration, assume deletion succeeded:
-                return View("DeletionSuccessful");
+                return View("Error");
             }
-            return View(model);
+
+            account.IsActive = isActive;
+            _accountRepository.SaveAccount(account);
+
+            return RedirectToAction("AccountList");
         }
 
         // --------------------------
         // Authentication Actions:
         // --------------------------
-
         public IActionResult SignIn(Account attempt)
         {
+            // Authenticate using plain-text comparisons.
             Account acc = _accountRepository.AuthenticateUser(attempt.Username, attempt.Password);
+
+            // Check for valid credentials and that the account is active.
             if (acc == null)
             {
                 ViewBag.ErrorMessage = "Invalid login credentials.";
+                return View("LogInPage");
+            }
+            if (!acc.IsActive)
+            {
+                ViewBag.ErrorMessage = "Your account is inactive. Please contact an administrator.";
                 return View("LogInPage");
             }
             ActiveAccount = acc;
@@ -262,7 +262,8 @@ namespace MBBS.Dashboard.web.Controllers
             return View();
         }
     }
-    public class ActivityLog
+
+public class ActivityLog
     {
         public int Id { get; set; }
         public int AccountId { get; set; }

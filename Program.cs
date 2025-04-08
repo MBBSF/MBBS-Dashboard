@@ -67,8 +67,9 @@ using (var scope = app.Services.CreateScope())
             Username = "admin",
             Email = "admin@example.com",
             // You must hash the password; for demonstration, we'll use a plaintext password then hash it.
-            Password = accountRepository.HashPassword("Admin@123"), // Replace with a secure default
-            UserRole = "Admin"
+            Password = "Admin@123", // Replace with a secure default
+            UserRole = "Admin",
+            IsActive = true
         };
 
         context.Accounts.Add(defaultAdmin);
