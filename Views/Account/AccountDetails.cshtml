@@ -1,4 +1,5 @@
-﻿@model             Account
+﻿@model MBBS.Dashboard.web.Models.Account
+
 @{
     ViewData["Title"] = "Account Details";
 }
@@ -30,13 +31,5 @@
 
 <a class="btn btn-primary text-white btn-sm" asp-controller="Account" asp-action="ChangePassword" style="margin-top: 20px;">Change Password</a>
 <a class="btn btn-success text-white btn-sm" asp-controller="Account" asp-action="EditAccount" style="margin-top: 20px;">Edit Account</a>
-<a class="btn btn-danger text-white btn-sm" asp-controller="Account" asp-action="DeleteAccount" style="margin-top: 20px;">Delete Account</a>
+<!-- Delete Account button removed for now -->
 <a class="btn btn-primary text-white btn-sm" asp-controller="Home" asp-action="Index" style="margin-top: 20px;">Back to Home</a>
-
-</div>
-
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-}
