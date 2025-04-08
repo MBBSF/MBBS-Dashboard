@@ -134,6 +134,10 @@ else
     {
         <div class="mt-4">
             <h3>Detailed Platform Data</h3>
+            <form method="get" asp-action="ViewDataByPlatform" asp-route-platformId="@Model.PlatformId">
+                <input type="text" name="searchQuery" value="@Model.SearchQuery" placeholder="Search..." class="form-control mb-3" />
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
             <table class="table table-striped">
                 <thead>
                     <tr>

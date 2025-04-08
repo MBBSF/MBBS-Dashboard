@@ -34,11 +34,24 @@ namespace MBBS.Dashboard.web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> ViewDataByPlatform(int platformId, string sortBy, string sortOrder)
+        public async Task<IActionResult> ViewDataByPlatform(int platformId, string sortBy, string sortOrder, string searchQuery)
         {
             var viewModel = await GetDashboardViewModel();
             viewModel.PlatformId = platformId;
+            viewModel.SearchQuery = searchQuery;
             viewModel.PlatformData = await GetPlatformData(platformId);
+
+            if (!string.IsNullOrEmpty(searchQuery))
+            {
+                viewModel.PlatformData = viewModel.PlatformData.Where(item =>
+                    (platformId == 1 && ((item as dynamic).Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                                         (item as dynamic).Email.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))) ||
+                    (platformId == 2 && ((item as dynamic).Name_First.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                                         (item as dynamic).Name_Last.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))) ||
+                    (platformId == 3 && ((item as dynamic).Mentor.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                                         (item as dynamic).Mentee.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)))
+                ).ToList();
+            }
 
             if (platformId == 1)
             {
