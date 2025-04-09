@@ -30,6 +30,7 @@ namespace MBBS.Dashboard.web.Models
     {
         public class CourseraSpecializationData
         {
+            public int Id { get; set; }
             public string Name { get; set; }
             public string Email { get; set; }
             public string Specialization { get; set; }
@@ -38,6 +39,7 @@ namespace MBBS.Dashboard.web.Models
 
         public class CognitoData
         {
+            public int Id { get; set; } // Changed from MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id to Id
             public string Name_First { get; set; }
             public string Name_Last { get; set; }
             public string Phone { get; set; }
@@ -46,6 +48,7 @@ namespace MBBS.Dashboard.web.Models
 
         public class GoogleFormsData
         {
+            public int Id { get; set; }
             public string Mentor { get; set; }
             public string Mentee { get; set; }
             public DateTime? Date { get; set; }
@@ -72,7 +75,7 @@ namespace MBBS.Dashboard.web.Models
 
         public class CourseraMembershipReportViewModel
         {
-            public int Id { get; set; } // Added Id
+            public int Id { get; set; }
             public string Name { get; set; }
             public string Email { get; set; }
             public string ProgramName { get; set; }
@@ -83,7 +86,7 @@ namespace MBBS.Dashboard.web.Models
 
         public class CourseraPivotLocationCityReportViewModel
         {
-            public int Id { get; set; } // Added Id
+            public int Id { get; set; }
             public string LocationCity { get; set; }
             public int CurrentMembers { get; set; }
             public int CurrentLearners { get; set; }
@@ -94,7 +97,7 @@ namespace MBBS.Dashboard.web.Models
 
         public class CourseraUsageReportViewModel
         {
-            public int Id { get; set; } // Added Id
+            public int Id { get; set; }
             public string Name { get; set; }
             public string Course { get; set; }
             public double? OverallProgress { get; set; }

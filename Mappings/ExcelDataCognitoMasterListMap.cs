@@ -7,8 +7,8 @@ namespace MBBS.Dashboard.web.Mappings
     {
         public ExcelDataCognitoMasterListMap()
         {
-            Map(m => m.AccountId).Ignore();
-            Map(m => m.MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id).Name("MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id");
+            Map(m => m.Id).Name("Id"); // Changed from MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id to Id
+            Map(m => m.AccountId).Ignore(); // Ignored as it’s not in the CSV or may be set elsewhere
             Map(m => m.Name_First).Name("Name_First");
             Map(m => m.Name_Middle).Name("Name_Middle");
             Map(m => m.Name_Last).Name("Name_Last");
