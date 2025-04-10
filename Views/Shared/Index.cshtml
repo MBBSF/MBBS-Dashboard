@@ -2,29 +2,76 @@
     ViewData["Title"] = "Home Page";
 }
 
+<div class="container-fluid bg-light min-vh-100 d-flex align-items-center">
+    <div class="row w-100 py-5">
+        <div class="col-12 col-md-8 mx-auto text-center">
+            <!-- Header Section -->
+            <h2 class="display-5 fw-bold text-primary mb-4">
+                Welcome to the Marie Barney Boston Scholarship Foundation
+            </h2>
+            <h3 class="h4 text-muted mb-5">Metrics Dashboard</h3>
 
-<div class="text-center">
-    <h2>Welcome to the Marie Barney Boston Scholarship Foundation's Metrics Dashboard</h2>
+            <!-- Main Content -->
+            <div class="card shadow-sm border-0 p-4 mb-5">
+                <div class="card-body">
+                    <p class="lead text-dark">
+                        The Marie Barney Boston Scholarship Foundation (MBBSF) is dedicated to enhancing educational opportunities for disadvantaged youth by providing scholarships and resources to facilitate access to higher education. Established under the guidance of Dr. Brenda Boston-Hudson in honor of her mother, Dr. Marie Barney Boston, the foundation aims to empower students from underserved communities through educational support, leadership development, and community engagement.
+                    </p>
+                    <p class="text-secondary">
+                        By focusing on closing knowledge gaps and promoting college attendance, MBBSF seeks to increase the number of professionals and doctoral candidates from diverse backgrounds, ultimately fostering positive change within communities and encouraging future generations to pursue academic and leadership excellence.
+                    </p>
+                    <p class="text-secondary">
+                        This website serves as a web-based dashboard designed to streamline data organization and access for the Marie Barney Boston Scholarship Foundation, integrating seamlessly with their current software and database systems.
+                    </p>
+                </div>
+            </div>
 
-    <body>
-        <p>
-            The Marie Barney Boston Scholarship Foundation (MBBSF) is dedicated to enhancing educational opportunities for disadvantaged youth by providing scholarships and resources to facilitate access to higher education. Established under the guidance of Dr. Brenda Boston-Hudson in honor of her mother, Dr. Marie Barney Boston, the foundation aims to empower students from underserved communities through educational support, leadership development, and community engagement. By focusing on closing knowledge gaps and promoting college attendance, MBBSF seeks to increase the number of professionals and doctoral candidates from diverse backgrounds, ultimately fostering positive change within communities and encouraging future generations to pursue academic and leadership excellence.
-        </p>
-        <p>
-            This website is a web-based dashboard that will streamline data organization and access
-            for the Marie Barney Boston Scholarship Foundation. It will integrate with their current software and database
-            systems.
-        </p>
-    </body>
-    <br />
-    <div class="container button-container">
-        <a class="btn btn-primary text-white btn-sm" asp-controller="Account" asp-action="AccountCreation">Account Registration</a>
+            <!-- Buttons -->
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a class="btn btn-primary btn-lg px-4 py-2"
+                   asp-controller="Account"
+                   asp-action="AccountCreation">
+                    Account Registration
+                </a>
+                <a class="btn btn-outline-primary btn-lg px-4 py-2"
+                   asp-controller="Home"
+                   asp-action="FAQ">
+                    FAQ & Support
+                </a>
+            </div>
+        </div>
     </div>
-
-    <!-- Added FAQ & Support button to navigate to the FAQ page for user support -abdel -->
-    <div class="container button-container">
-        <a class="btn btn-primary text-white btn-sm" asp-controller="Home" asp-action="FAQ">FAQ & Support</a>
-    </div>
-
-
 </div>
+
+<!-- Optional Custom CSS -->
+<style>
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+        transform: translateY(-2px);
+    }
+
+    .btn-outline-primary {
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-primary:hover {
+        transform: translateY(-2px);
+    }
+
+    .card {
+        border-radius: 15px;
+        background-color: #ffffff;
+    }
+
+    .display-5 {
+        font-size: 2.5rem;
+        line-height: 1.2;
+    }
+</style>

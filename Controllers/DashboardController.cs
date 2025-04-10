@@ -223,6 +223,58 @@ namespace MBBS.Dashboard.web.Controllers
             return RedirectToAction("ViewDataByPlatform", new { platformId, reportType });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> DeleteCognitoRecords(int platformId, int[] ids)
+        {
+            if (ids == null || ids.Length == 0)
+            {
+                TempData["Error"] = "No records selected for deletion.";
+                return RedirectToAction("ViewDataByPlatform", new { platformId });
+            }
+
+            try
+            {
+                var cognitoRecords = await _context.ExcelDataCognitoMasterList
+                    .Where(x => ids.Contains(x.Id)) // Changed from MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id
+                    .ToListAsync();
+                _context.ExcelDataCognitoMasterList.RemoveRange(cognitoRecords);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = $"{ids.Length} record(s) deleted successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"An error occurred while deleting records: {ex.Message}";
+            }
+
+            return RedirectToAction("ViewDataByPlatform", new { platformId });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteGoogleFormsRecords(int platformId, int[] ids)
+        {
+            if (ids == null || ids.Length == 0)
+            {
+                TempData["Error"] = "No records selected for deletion.";
+                return RedirectToAction("ViewDataByPlatform", new { platformId });
+            }
+
+            try
+            {
+                var googleFormsRecords = await _context.ExcelDataGoogleFormsVolunteerProgram
+                    .Where(x => ids.Contains(x.Id))
+                    .ToListAsync();
+                _context.ExcelDataGoogleFormsVolunteerProgram.RemoveRange(googleFormsRecords);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = $"{ids.Length} record(s) deleted successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"An error occurred while deleting records: {ex.Message}";
+            }
+
+            return RedirectToAction("ViewDataByPlatform", new { platformId });
+        }
+
         private async Task GetPlatformData(DashboardViewModel viewModel, int platformId)
         {
             switch (platformId)
@@ -231,6 +283,7 @@ namespace MBBS.Dashboard.web.Controllers
                     viewModel.CourseraPlatformData = await _context.ExcelDataCourseraSpecialization
                         .Select(x => new PlatformDataViewModel.CourseraSpecializationData
                         {
+                            Id = x.Id,
                             Name = x.Name,
                             Email = x.Email,
                             Specialization = x.Specialization,
@@ -241,6 +294,7 @@ namespace MBBS.Dashboard.web.Controllers
                     viewModel.CognitoPlatformData = await _context.ExcelDataCognitoMasterList
                         .Select(x => new PlatformDataViewModel.CognitoData
                         {
+                            Id = x.Id, // Changed from MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id
                             Name_First = x.Name_First,
                             Name_Last = x.Name_Last,
                             Phone = x.Phone,
@@ -251,6 +305,7 @@ namespace MBBS.Dashboard.web.Controllers
                     viewModel.GoogleFormsPlatformData = await _context.ExcelDataGoogleFormsVolunteerProgram
                         .Select(x => new PlatformDataViewModel.GoogleFormsData
                         {
+                            Id = x.Id,
                             Mentor = x.Mentor,
                             Mentee = x.Mentee,
                             Date = x.Date,
@@ -337,7 +392,7 @@ namespace MBBS.Dashboard.web.Controllers
                 ScholarshipApplicationKPIs = scholarshipKPIs,
                 CourseraMembershipReports = membershipReports.Select(x => new KpiDataViewModel.CourseraMembershipReportViewModel
                 {
-                    Id = x.Id, // Added Id
+                    Id = x.Id,
                     MemberState = x.MemberState,
                     Name = x.Name,
                     Email = x.Email,
@@ -347,7 +402,7 @@ namespace MBBS.Dashboard.web.Controllers
                 }).ToList(),
                 CourseraPivotLocationCityReports = pivotReports.Select(x => new KpiDataViewModel.CourseraPivotLocationCityReportViewModel
                 {
-                    Id = x.Id, // Added Id
+                    Id = x.Id,
                     LocationCity = x.LocationCity,
                     CurrentMembers = x.CurrentMembers ?? 0,
                     CurrentLearners = x.CurrentLearners ?? 0,
@@ -357,7 +412,7 @@ namespace MBBS.Dashboard.web.Controllers
                 }).ToList(),
                 CourseraUsageReports = usageReports.Select(x => new KpiDataViewModel.CourseraUsageReportViewModel
                 {
-                    Id = x.Id, // Added Id
+                    Id = x.Id,
                     Name = x.Name,
                     Course = x.Course,
                     OverallProgress = (double?)x.OverallProgress,
@@ -367,6 +422,30 @@ namespace MBBS.Dashboard.web.Controllers
                 CourseraData = courseraData,
                 CognitoData = cognitoData,
                 GoogleFormsData = googleFormsData,
+                CourseraPlatformData = courseraData.Select(x => new PlatformDataViewModel.CourseraSpecializationData
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Email = x.Email,
+                    Specialization = x.Specialization,
+                    Completed = x.Completed
+                }).ToList(),
+                CognitoPlatformData = cognitoData.Select(x => new PlatformDataViewModel.CognitoData
+                {
+                    Id = x.Id, // Changed from MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id
+                    Name_First = x.Name_First,
+                    Name_Last = x.Name_Last,
+                    Phone = x.Phone,
+                    IntendedMajor = x.IntendedMajor
+                }).ToList(),
+                GoogleFormsPlatformData = googleFormsData.Select(x => new PlatformDataViewModel.GoogleFormsData
+                {
+                    Id = x.Id,
+                    Mentor = x.Mentor,
+                    Mentee = x.Mentee,
+                    Date = x.Date,
+                    MethodOfContact = x.MethodOfContact
+                }).ToList(),
                 ActivityLogs = activityLogs.Select(x => new ActivityLogViewModel
                 {
                     Action = x.Action,
