@@ -235,7 +235,7 @@ namespace MBBS.Dashboard.web.Controllers
             try
             {
                 var cognitoRecords = await _context.ExcelDataCognitoMasterList
-                    .Where(x => ids.Contains(x.Id)) // Changed from MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id
+                    .Where(x => ids.Contains(x.Id))
                     .ToListAsync();
                 _context.ExcelDataCognitoMasterList.RemoveRange(cognitoRecords);
                 await _context.SaveChangesAsync();
@@ -294,7 +294,7 @@ namespace MBBS.Dashboard.web.Controllers
                     viewModel.CognitoPlatformData = await _context.ExcelDataCognitoMasterList
                         .Select(x => new PlatformDataViewModel.CognitoData
                         {
-                            Id = x.Id, // Changed from MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id
+                            Id = x.Id,
                             Name_First = x.Name_First,
                             Name_Last = x.Name_Last,
                             Phone = x.Phone,
@@ -324,6 +324,15 @@ namespace MBBS.Dashboard.web.Controllers
             var pivotReports = await _context.ExcelDataCourseraPivotLocationCityReports.ToListAsync();
             var usageReports = await _context.ExcelDataCourseraUsageReports.ToListAsync();
             var activityLogs = await _activityLogRepository.GetRecentActivityLogsAsync(50);
+
+            // Debugging logs
+            Console.WriteLine($"CourseraData Count: {courseraData.Count}");
+            Console.WriteLine($"CognitoData Count: {cognitoData.Count}");
+            Console.WriteLine($"GoogleFormsData Count: {googleFormsData.Count}");
+            Console.WriteLine($"MembershipReports Count: {membershipReports.Count}");
+            Console.WriteLine($"PivotReports Count: {pivotReports.Count}");
+            Console.WriteLine($"UsageReports Count: {usageReports.Count}");
+            Console.WriteLine($"ActivityLogs Count: {activityLogs.Count()}");
 
             var specializationEmails = courseraData.Select(x => x.Email?.ToLower()).Where(e => !string.IsNullOrEmpty(e));
             var membershipEmails = membershipReports.Select(x => x.Email?.ToLower()).Where(e => !string.IsNullOrEmpty(e));
@@ -362,14 +371,24 @@ namespace MBBS.Dashboard.web.Controllers
                     .OrderByDescending(g => g.Count()).Take(5).Select(g => g.Key).ToList(),
                 UniqueMentees = googleFormsData.Select(x => x.Mentee).Distinct().Count(),
                 AverageSessionsPerMentee = googleFormsData.Select(x => x.Mentee).Distinct().Count() > 0 ?
-                    (double)googleFormsData.Count / googleFormsData.Select(x => x.Mentee).Distinct().Count() : 0
+                    (double)googleFormsData.Count / googleFormsData.Select(x => x.Mentee).Distinct().Count() : 0,
+                ContactMethodPreference = googleFormsData
+                    .GroupBy(x => x.MethodOfContact ?? "Unknown")
+                    .Select(g => new { Method = g.Key, Count = g.Count() })
+                    .OrderByDescending(x => x.Count)
+                    .Take(10)
+                    .ToDictionary(x => x.Method, x => x.Count)
             };
 
             var scholarshipKPIs = new ScholarshipApplicationKPIsViewModel
             {
                 TotalApplications = cognitoData.Count,
-                IntendedMajorDistribution = cognitoData.GroupBy(x => x.IntendedMajor ?? "Unknown")
-                    .ToDictionary(g => g.Key, g => g.Count()),
+                IntendedMajorDistribution = cognitoData
+                    .GroupBy(x => x.IntendedMajor ?? "Unknown")
+                    .Select(g => new { Major = g.Key, Count = g.Count() })
+                    .OrderByDescending(x => x.Count)
+                    .Take(10)
+                    .ToDictionary(x => x.Major, x => x.Count),
                 PhoneNumberProvisionRate = cognitoData.Count > 0 ?
                     (double)cognitoData.Count(x => !string.IsNullOrEmpty(x.Phone)) / cognitoData.Count : 0,
                 SchoolDistribution = courseraData.GroupBy(x => x.LocationCity ?? "Unknown")
@@ -378,7 +397,7 @@ namespace MBBS.Dashboard.web.Controllers
                     .Select(x => x.HighSchoolCollegeData_CumulativeGPA.Value).DefaultIfEmpty(0).Average()
             };
 
-            return new DashboardViewModel
+            var viewModel = new DashboardViewModel
             {
                 KpiData = new KpiDataViewModel
                 {
@@ -415,7 +434,7 @@ namespace MBBS.Dashboard.web.Controllers
                     Id = x.Id,
                     Name = x.Name,
                     Course = x.Course,
-                    OverallProgress = (double?)x.OverallProgress,
+                    OverallProgress = (double?)x.OverallProgress, // Fixed: Changed from AverageProgress to OverallProgress
                     Completed = x.Completed,
                     EstimatedLearningHours = (double?)x.EstimatedLearningHours ?? 0
                 }).ToList(),
@@ -432,7 +451,7 @@ namespace MBBS.Dashboard.web.Controllers
                 }).ToList(),
                 CognitoPlatformData = cognitoData.Select(x => new PlatformDataViewModel.CognitoData
                 {
-                    Id = x.Id, // Changed from MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id
+                    Id = x.Id,
                     Name_First = x.Name_First,
                     Name_Last = x.Name_Last,
                     Phone = x.Phone,
@@ -452,6 +471,14 @@ namespace MBBS.Dashboard.web.Controllers
                     Timestamp = x.Timestamp
                 }).ToList()
             };
+
+            // More debugging logs for key metrics
+            Console.WriteLine($"GoogleCertificationKPIs.TotalParticipants: {viewModel.GoogleCertificationKPIs.TotalParticipants}");
+            Console.WriteLine($"MentoringProgramKPIs.TotalMentoringSessions: {viewModel.MentoringProgramKPIs.TotalMentoringSessions}");
+            Console.WriteLine($"ScholarshipApplicationKPIs.TotalApplications: {viewModel.ScholarshipApplicationKPIs.TotalApplications}");
+            Console.WriteLine($"GoogleFormsPlatformData Count: {viewModel.GoogleFormsPlatformData.Count}");
+
+            return viewModel;
         }
     }
 }

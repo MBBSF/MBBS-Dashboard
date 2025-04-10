@@ -113,6 +113,7 @@ namespace MBBS.Dashboard.web.Models
         public List<string> TopMentors { get; set; }
         public int UniqueMentees { get; set; }
         public double AverageSessionsPerMentee { get; set; }
+        public Dictionary<string, int> ContactMethodPreference { get; set; } // Already added
     }
 
     public class ScholarshipApplicationKPIsViewModel

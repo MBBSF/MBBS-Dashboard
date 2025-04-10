@@ -15,9 +15,9 @@
     }
     else
     {
-        <!-- Search Bar -->
-        <div class="mb-4">
-            <form asp-action="ViewDataByPlatform" method="get" class="d-flex">
+        <!-- Search Bar and Export Buttons -->
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+            <form asp-action="ViewDataByPlatform" method="get" class="d-flex flex-grow-1 me-2">
                 <input type="hidden" name="platformId" value="@Model.PlatformId" />
                 <input type="hidden" name="reportType" value="@Model.CurrentReportType" />
                 <div class="input-group w-100">
@@ -29,6 +29,13 @@
                     }
                 </div>
             </form>
+            <div class="custom-dropdown">
+                <button class="dropdown-toggle" onclick="toggleDropdown()">Export</button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="#" onclick="exportToCSV()">Export to CSV</a>
+                    <a class="dropdown-item" href="#" onclick="exportToPDF()">Export to PDF</a>
+                </div>
+            </div>
         </div>
 
         <!-- Key Performance Metrics -->
@@ -87,12 +94,27 @@
                         </ul>
 
                         <h5 class="mt-3">Top Mentors</h5>
-                        <ol class="list-group list-group-numbered">
+                        <ul class="list-group">
                             @foreach (var mentor in Model.MentoringProgramKPIs.TopMentors)
                             {
-                                <li class="list-group-item">@mentor</li>
+                                var sessionCount = Model.GoogleFormsPlatformData.Count(x => x.Mentor == mentor);
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @mentor
+                                    <span class="badge bg-success rounded-pill">@sessionCount</span>
+                                </li>
                             }
-                        </ol>
+                        </ul>
+
+                        <h5 class="mt-3">Top Contact Method Preferences</h5>
+                        <ul class="list-group">
+                            @foreach (var kvp in Model.MentoringProgramKPIs.ContactMethodPreference.OrderByDescending(pair => pair.Value))
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @(kvp.Key ?? "Unknown")
+                                    <span class="badge bg-success rounded-pill">@kvp.Value</span>
+                                </li>
+                            }
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -358,7 +380,7 @@
                                     @foreach (var item in Model.CognitoPlatformData ?? new List<PlatformDataViewModel.CognitoData>())
                                     {
                                         <tr>
-                                            <td><input type="checkbox" name="ids" value="@item.Id" class="cognitoIds translucent-checkbox" /></td> <!-- Changed from MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id to Id -->
+                                            <td><input type="checkbox" name="ids" value="@item.Id" class="cognitoIds translucent-checkbox" /></td>
                                             <td>@item.Name_First</td>
                                             <td>@item.Name_Last</td>
                                             <td>@item.Phone</td>
@@ -443,6 +465,9 @@
     }
 </div>
 
+<!-- Include jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <!-- Custom CSS -->
 <style>
     body {
@@ -463,6 +488,27 @@
     .card-header {
         border-radius: 8px 8px 0 0;
     }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+
+    .btn-outline-secondary {
+        border-color: #6c757d;
+        color: #6c757d;
+    }
+
+        .btn-outline-secondary:hover {
+            background-color: #6c757d;
+            color: white;
+        }
 
     .btn-pink {
         background-color: #ff69b4;
@@ -505,14 +551,247 @@
     .badge {
         font-size: 0.9rem;
     }
+
+    .gap-2 {
+        gap: 0.5rem;
+    }
+
+    /* Custom Dropdown Styles */
+    .custom-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-toggle {
+        background-color: #007bff;
+        border: 1px solid #007bff;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.2s;
+    }
+
+        .dropdown-toggle:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: white;
+        min-width: 120px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+        z-index: 1000;
+    }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+    .dropdown-item {
+        display: block;
+        padding: 8px 12px;
+        color: #333;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: background-color 0.2s;
+    }
+
+        .dropdown-item:hover {
+            background-color: #f1f1f1;
+        }
 </style>
 
 <!-- JavaScript -->
 <script>
+    // Pass model data to JavaScript with PascalCase naming
+    const modelData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+    // Detailed logging to inspect the data
+    console.log("Full Model Data:", modelData);
+    console.log("GoogleCertificationKPIs:", modelData.GoogleCertificationKPIs);
+    console.log("MentoringProgramKPIs:", modelData.MentoringProgramKPIs);
+    console.log("ScholarshipApplicationKPIs:", modelData.ScholarshipApplicationKPIs);
+    console.log("GoogleFormsPlatformData:", modelData.GoogleFormsPlatformData);
+
     function toggleCheckboxes(source, className) {
         const checkboxes = document.getElementsByClassName(className);
         for (let i = 0; i < checkboxes.length; i++) {
             checkboxes[i].checked = source.checked;
+        }
+    }
+
+    // Toggle dropdown visibility
+    function toggleDropdown() {
+        const dropdownMenu = document.querySelector('.dropdown-menu');
+        dropdownMenu.classList.toggle('show');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.querySelector('.custom-dropdown');
+        const dropdownMenu = document.querySelector('.dropdown-menu');
+        if (!dropdown.contains(event.target) && dropdownMenu.classList.contains('show')) {
+            dropdownMenu.classList.remove('show');
+        }
+    });
+
+    function exportToCSV() {
+        console.log("Exporting to CSV...");
+        try {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Category,Metric,Value\n";
+
+            // Google Certification Program
+            const googleKPIs = modelData.GoogleCertificationKPIs || {};
+            csvContent += "Google Certification Program,Total Participants," + (googleKPIs.TotalParticipants || 0) + "\n";
+            csvContent += "Google Certification Program,Completed Certifications," + (googleKPIs.CompletedCertifications || 0) + "\n";
+            csvContent += "Google Certification Program,Completion Rate," + ((googleKPIs.CompletionRate * 100) || 0).toFixed(2) + "%\n";
+            csvContent += "Google Certification Program,Active Learners," + (googleKPIs.ActiveLearners || 0) + "\n";
+            csvContent += "Specialization Distribution,,\n";
+            if (googleKPIs.SpecializationDistribution) {
+                for (let [key, value] of Object.entries(googleKPIs.SpecializationDistribution)) {
+                    csvContent += `Specialization Distribution,"${key}",${value}\n`;
+                }
+            }
+            csvContent += "Location Distribution,,\n";
+            if (googleKPIs.LocationDistribution) {
+                for (let [key, value] of Object.entries(googleKPIs.LocationDistribution)) {
+                    csvContent += `Location Distribution,"${key}",${value}\n`;
+                }
+            }
+
+            // Mentoring Program
+            const mentoringKPIs = modelData.MentoringProgramKPIs || {};
+            csvContent += "Mentoring Program,Total Sessions," + (mentoringKPIs.TotalMentoringSessions || 0) + "\n";
+            csvContent += "Mentoring Program,Unique Mentees," + (mentoringKPIs.UniqueMentees || 0) + "\n";
+            csvContent += "Mentoring Program,Avg Sessions/Mentee," + (mentoringKPIs.AverageSessionsPerMentee || 0).toFixed(1) + "\n";
+            csvContent += "Top 10 Mentors,,\n";
+            if (mentoringKPIs.TopMentors && modelData.GoogleFormsPlatformData) {
+                mentoringKPIs.TopMentors.forEach(mentor => {
+                    const sessionCount = modelData.GoogleFormsPlatformData.filter(x => x.Mentor === mentor).length;
+                    csvContent += `Top 10 Mentors,"${mentor}",${sessionCount}\n`;
+                });
+            }
+            csvContent += "Top 10 Contact Method Preferences,,\n";
+            if (mentoringKPIs.ContactMethodPreference) {
+                for (let [key, value] of Object.entries(mentoringKPIs.ContactMethodPreference)) {
+                    csvContent += `Top 10 Contact Method Preferences,"${key || "Unknown"}",${value}\n`;
+                }
+            }
+
+            // Scholarship Application Program
+            const scholarshipKPIs = modelData.ScholarshipApplicationKPIs || {};
+            csvContent += "Scholarship Application Program,Total Applications," + (scholarshipKPIs.TotalApplications || 0) + "\n";
+            csvContent += "Scholarship Application Program,Phone Provision Rate," + ((scholarshipKPIs.PhoneNumberProvisionRate * 100) || 0).toFixed(2) + "%\n";
+            csvContent += "Scholarship Application Program,Average GPA," + (scholarshipKPIs.AverageGPA || 0).toFixed(2) + "\n";
+            csvContent += "Top 10 Intended Majors,,\n";
+            if (scholarshipKPIs.IntendedMajorDistribution) {
+                for (let [key, value] of Object.entries(scholarshipKPIs.IntendedMajorDistribution)) {
+                    csvContent += `Top 10 Intended Majors,"${key}",${value}\n`;
+                }
+            }
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "dashboard_metrics.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            console.log("CSV export completed.");
+            toggleDropdown(); // Close dropdown after export
+        } catch (error) {
+            console.error("Error exporting to CSV:", error);
+            alert("Failed to export CSV: " + error.message);
+            toggleDropdown(); // Close dropdown even on error
+        }
+    }
+
+    function exportToPDF() {
+        console.log("Exporting to PDF...");
+        try {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                throw new Error("jsPDF library not loaded.");
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(16);
+            doc.text("Dashboard Metrics", 10, 10);
+
+            doc.setFontSize(12);
+            let y = 20;
+
+            // Google Certification Program
+            const googleKPIs = modelData.GoogleCertificationKPIs || {};
+            doc.text("Google Certification Program", 10, y); y += 10;
+            doc.text(`Total Participants: ${googleKPIs.TotalParticipants || 0}`, 10, y); y += 7;
+            doc.text(`Completed Certifications: ${googleKPIs.CompletedCertifications || 0}`, 10, y); y += 7;
+            doc.text(`Completion Rate: ${((googleKPIs.CompletionRate * 100) || 0).toFixed(2)}%`, 10, y); y += 7;
+            doc.text(`Active Learners: ${googleKPIs.ActiveLearners || 0}`, 10, y); y += 7;
+            doc.text("Specialization Distribution", 10, y); y += 10;
+            if (googleKPIs.SpecializationDistribution) {
+                for (let [key, value] of Object.entries(googleKPIs.SpecializationDistribution)) {
+                    doc.text(`${key}: ${value}`, 10, y); y += 7;
+                }
+            }
+            y += 3;
+            doc.text("Location Distribution", 10, y); y += 10;
+            if (googleKPIs.LocationDistribution) {
+                for (let [key, value] of Object.entries(googleKPIs.LocationDistribution)) {
+                    doc.text(`${key}: ${value}`, 10, y); y += 7;
+                }
+            }
+            y += 3;
+
+            // Mentoring Program
+            const mentoringKPIs = modelData.MentoringProgramKPIs || {};
+            doc.text("Mentoring Program", 10, y); y += 10;
+            doc.text(`Total Sessions: ${mentoringKPIs.TotalMentoringSessions || 0}`, 10, y); y += 7;
+            doc.text(`Unique Mentees: ${mentoringKPIs.UniqueMentees || 0}`, 10, y); y += 7;
+            doc.text(`Avg Sessions/Mentee: ${(mentoringKPIs.AverageSessionsPerMentee || 0).toFixed(1)}`, 10, y); y += 7;
+            doc.text("Top 10 Mentors:", 10, y); y += 7;
+            if (mentoringKPIs.TopMentors && modelData.GoogleFormsPlatformData) {
+                mentoringKPIs.TopMentors.forEach(mentor => {
+                    const sessionCount = modelData.GoogleFormsPlatformData.filter(x => x.Mentor === mentor).length;
+                    doc.text(`${mentor}: ${sessionCount}`, 15, y); y += 7;
+                });
+            }
+            doc.text("Top 10 Contact Method Preferences:", 10, y); y += 7;
+            if (mentoringKPIs.ContactMethodPreference) {
+                for (let [key, value] of Object.entries(mentoringKPIs.ContactMethodPreference)) {
+                    doc.text(`${key || "Unknown"}: ${value}`, 15, y); y += 7;
+                }
+            }
+            y += 3;
+
+            // Scholarship Application Program
+            const scholarshipKPIs = modelData.ScholarshipApplicationKPIs || {};
+            doc.text("Scholarship Application Program", 10, y); y += 10;
+            doc.text(`Total Applications: ${scholarshipKPIs.TotalApplications || 0}`, 10, y); y += 7;
+            doc.text(`Phone Provision Rate: ${((scholarshipKPIs.PhoneNumberProvisionRate * 100) || 0).toFixed(2)}%`, 10, y); y += 7;
+            doc.text(`Average GPA: ${(scholarshipKPIs.AverageGPA || 0).toFixed(2)}`, 10, y); y += 7;
+            doc.text("Top 10 Intended Majors:", 10, y); y += 7;
+            if (scholarshipKPIs.IntendedMajorDistribution) {
+                for (let [key, value] of Object.entries(scholarshipKPIs.IntendedMajorDistribution)) {
+                    doc.text(`${key}: ${value}`, 15, y); y += 7;
+                }
+            }
+
+            doc.save("dashboard_metrics.pdf");
+            console.log("PDF export completed.");
+            toggleDropdown(); // Close dropdown after export
+        } catch (error) {
+            console.error("Error exporting to PDF:", error);
+            alert("Failed to export PDF: " + error.message);
+            toggleDropdown(); // Close dropdown even on error
         }
     }
 </script>
