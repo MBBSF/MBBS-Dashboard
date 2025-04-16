@@ -10,20 +10,13 @@ namespace MBBS.Dashboard.web.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id",
-                table: "ExcelDataCognitoMasterList",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
+            
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id",
-                table: "ExcelDataCognitoMasterList");
+            
         }
     }
 }

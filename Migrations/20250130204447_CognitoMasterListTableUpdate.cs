@@ -10,10 +10,7 @@ namespace MBBS.Dashboard.web.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "Id",
-                table: "ExcelDataCognitoMasterList",
-                newName: "MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id");
+            
 
             migrationBuilder.AlterColumn<string>(
                 name: "Username",
@@ -55,10 +52,7 @@ namespace MBBS.Dashboard.web.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id",
-                table: "ExcelDataCognitoMasterList",
-                newName: "Id");
+            
 
             migrationBuilder.AlterColumn<string>(
                 name: "Username",
