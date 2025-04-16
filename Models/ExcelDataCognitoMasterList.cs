@@ -45,5 +45,12 @@ namespace MBBS.Dashboard.web.Models
         public DateTime? Entry_DateCreated { get; set; }
         public DateTime? Entry_DateSubmitted { get; set; }
         public DateTime? Entry_DateUpdated { get; set; }
+
+#if false
+public static implicit operator ExcelDataCognitoMasterList(ExcelDataCognitoMasterList v)
+{
+    throw new NotImplementedException();
+}
+#endif
     }
 }
