@@ -11,6 +11,7 @@ namespace MBBS.Dashboard.web.Models
         public ScholarshipApplicationKPIsViewModel ScholarshipApplicationKPIs { get; set; }
         public List<KpiDataViewModel.CourseraMembershipReportViewModel> CourseraMembershipReports { get; set; }
         public List<KpiDataViewModel.CourseraPivotLocationCityReportViewModel> CourseraPivotLocationCityReports { get; set; }
+        public List<KpiDataViewModel.CourseraPivotLocationCountryReportViewModel> CourseraPivotLocationCountryReports { get; set; }
         public List<KpiDataViewModel.CourseraUsageReportViewModel> CourseraUsageReports { get; set; }
         public List<ExcelDataCourseraSpecialization> CourseraData { get; set; }
         public List<ExcelDataCognitoMasterList> CognitoData { get; set; }
@@ -39,7 +40,7 @@ namespace MBBS.Dashboard.web.Models
 
         public class CognitoData
         {
-            public int Id { get; set; } // Changed from MARIEBARNEYBOSTONSCHOLARSHIPFOU_Id to Id
+            public int Id { get; set; }
             public string Name_First { get; set; }
             public string Name_Last { get; set; }
             public string Phone { get; set; }
@@ -53,6 +54,7 @@ namespace MBBS.Dashboard.web.Models
             public string Mentee { get; set; }
             public DateTime? Date { get; set; }
             public string MethodOfContact { get; set; }
+            public string Comment { get; set; }
         }
     }
 
@@ -95,6 +97,17 @@ namespace MBBS.Dashboard.web.Models
             public double? AverageProgress { get; set; }
         }
 
+        public class CourseraPivotLocationCountryReportViewModel
+        {
+            public int Id { get; set; }
+            public string LocationCountry { get; set; }
+            public int CurrentMembers { get; set; }
+            public int CurrentLearners { get; set; }
+            public int TotalEnrollments { get; set; }
+            public int TotalCompletedCourses { get; set; }
+            public double? AverageProgress { get; set; }
+        }
+
         public class CourseraUsageReportViewModel
         {
             public int Id { get; set; }
@@ -113,7 +126,7 @@ namespace MBBS.Dashboard.web.Models
         public List<string> TopMentors { get; set; }
         public int UniqueMentees { get; set; }
         public double AverageSessionsPerMentee { get; set; }
-        public Dictionary<string, int> ContactMethodPreference { get; set; } // Already added
+        public Dictionary<string, int> ContactMethodPreference { get; set; }
     }
 
     public class ScholarshipApplicationKPIsViewModel
