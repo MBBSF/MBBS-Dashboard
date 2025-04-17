@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -384,8 +385,8 @@ namespace MBBS.Dashboard.web.Controllers
             {
                 TotalApplications = cognitoData.Count,
                 IntendedMajorDistribution = cognitoData
-                    .GroupBy(x => x.IntendedMajor ?? "Unknown")
-                    .Select(g => new { Major = g.Key, Count = g.Count() })
+                    .GroupBy(x => (x.IntendedMajor ?? "Unknown").Trim().ToLower())
+                    .Select(g => new { Major = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(g.Key), Count = g.Count() })
                     .OrderByDescending(x => x.Count)
                     .Take(10)
                     .ToDictionary(x => x.Major, x => x.Count),
