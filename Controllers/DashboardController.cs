@@ -81,7 +81,7 @@ namespace MBBS.Dashboard.web.Controllers
                         }
                         break;
 
-                    case "location":
+                    case "location-city":
                         if (!string.IsNullOrEmpty(searchQuery))
                         {
                             viewModel.CourseraPivotLocationCityReports = viewModel.CourseraPivotLocationCityReports
@@ -93,6 +93,21 @@ namespace MBBS.Dashboard.web.Controllers
                             viewModel.CourseraPivotLocationCityReports = sortOrder == "desc"
                                 ? viewModel.CourseraPivotLocationCityReports.OrderByDescending(x => x.GetType().GetProperty(sortBy)?.GetValue(x)).ToList()
                                 : viewModel.CourseraPivotLocationCityReports.OrderBy(x => x.GetType().GetProperty(sortBy)?.GetValue(x)).ToList();
+                        }
+                        break;
+
+                    case "location-country":
+                        if (!string.IsNullOrEmpty(searchQuery))
+                        {
+                            viewModel.CourseraPivotLocationCountryReports = viewModel.CourseraPivotLocationCountryReports
+                                .Where(p => p.LocationCountry?.ToLower().Contains(searchQuery.ToLower()) == true)
+                                .ToList();
+                        }
+                        if (!string.IsNullOrEmpty(sortBy))
+                        {
+                            viewModel.CourseraPivotLocationCountryReports = sortOrder == "desc"
+                                ? viewModel.CourseraPivotLocationCountryReports.OrderByDescending(x => x.GetType().GetProperty(sortBy)?.GetValue(x)).ToList()
+                                : viewModel.CourseraPivotLocationCountryReports.OrderBy(x => x.GetType().GetProperty(sortBy)?.GetValue(x)).ToList();
                         }
                         break;
 
@@ -142,7 +157,8 @@ namespace MBBS.Dashboard.web.Controllers
                         .Where(p => p.Mentor?.ToLower().Contains(searchQuery.ToLower()) == true ||
                                    p.Mentee?.ToLower().Contains(searchQuery.ToLower()) == true ||
                                    p.Date?.ToString().ToLower().Contains(searchQuery.ToLower()) == true ||
-                                   p.MethodOfContact?.ToLower().Contains(searchQuery.ToLower()) == true)
+                                   p.MethodOfContact?.ToLower().Contains(searchQuery.ToLower()) == true ||
+                                   p.Comment?.ToLower().Contains(searchQuery.ToLower()) == true)
                         .ToList();
                 }
                 if (!string.IsNullOrEmpty(sortBy))
@@ -194,11 +210,18 @@ namespace MBBS.Dashboard.web.Controllers
                         _context.ExcelDataCourseraMembershipReports.RemoveRange(memberships);
                         break;
 
-                    case "location":
+                    case "location-city":
                         var locations = await _context.ExcelDataCourseraPivotLocationCityReports
                             .Where(x => ids.Contains(x.Id))
                             .ToListAsync();
                         _context.ExcelDataCourseraPivotLocationCityReports.RemoveRange(locations);
+                        break;
+
+                    case "location-country":
+                        var countryLocations = await _context.ExcelDataCourseraPivotLocationCountryReports
+                            .Where(x => ids.Contains(x.Id))
+                            .ToListAsync();
+                        _context.ExcelDataCourseraPivotLocationCountryReports.RemoveRange(countryLocations);
                         break;
 
                     case "usage":
@@ -310,7 +333,8 @@ namespace MBBS.Dashboard.web.Controllers
                             Mentor = x.Mentor,
                             Mentee = x.Mentee,
                             Date = x.Date,
-                            MethodOfContact = x.MethodOfContact
+                            MethodOfContact = x.MethodOfContact,
+                            Comment = x.Comment
                         }).ToListAsync();
                     break;
             }
@@ -322,7 +346,8 @@ namespace MBBS.Dashboard.web.Controllers
             var cognitoData = await _context.ExcelDataCognitoMasterList.ToListAsync();
             var googleFormsData = await _context.ExcelDataGoogleFormsVolunteerProgram.ToListAsync();
             var membershipReports = await _context.ExcelDataCourseraMembershipReports.ToListAsync();
-            var pivotReports = await _context.ExcelDataCourseraPivotLocationCityReports.ToListAsync();
+            var pivotCityReports = await _context.ExcelDataCourseraPivotLocationCityReports.ToListAsync();
+            var pivotCountryReports = await _context.ExcelDataCourseraPivotLocationCountryReports.ToListAsync();
             var usageReports = await _context.ExcelDataCourseraUsageReports.ToListAsync();
             var activityLogs = await _activityLogRepository.GetRecentActivityLogsAsync(50);
 
@@ -331,7 +356,8 @@ namespace MBBS.Dashboard.web.Controllers
             Console.WriteLine($"CognitoData Count: {cognitoData.Count}");
             Console.WriteLine($"GoogleFormsData Count: {googleFormsData.Count}");
             Console.WriteLine($"MembershipReports Count: {membershipReports.Count}");
-            Console.WriteLine($"PivotReports Count: {pivotReports.Count}");
+            Console.WriteLine($"PivotCityReports Count: {pivotCityReports.Count}");
+            Console.WriteLine($"PivotCountryReports Count: {pivotCountryReports.Count}");
             Console.WriteLine($"UsageReports Count: {usageReports.Count}");
             Console.WriteLine($"ActivityLogs Count: {activityLogs.Count()}");
 
@@ -357,9 +383,14 @@ namespace MBBS.Dashboard.web.Controllers
                 SpecializationDistribution = courseraData
                     .GroupBy(x => x.Specialization ?? "Unknown")
                     .ToDictionary(g => g.Key, g => g.Count()),
-                LocationDistribution = pivotReports
+                LocationDistribution = pivotCityReports
                     .GroupBy(x => x.LocationCity ?? "Unknown")
-                    .ToDictionary(g => g.Key, g => g.Sum(r => r.CurrentMembers ?? 0)),
+                    .ToDictionary(g => g.Key, g => g.Sum(r => r.CurrentMembers ?? 0))
+                    .Concat(pivotCountryReports
+                        .GroupBy(x => x.LocationCountry ?? "Unknown")
+                        .ToDictionary(g => g.Key, g => g.Sum(r => r.CurrentMembers ?? 0)))
+                    .GroupBy(x => x.Key)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.Value)),
                 ActiveLearners = membershipReports.Count(x => x.MemberState?.ToLower() == "active")
             };
 
@@ -420,10 +451,20 @@ namespace MBBS.Dashboard.web.Controllers
                     EnrolledCourses = x.EnrolledCourses ?? 0,
                     CompletedCourses = x.CompletedCourses ?? 0
                 }).ToList(),
-                CourseraPivotLocationCityReports = pivotReports.Select(x => new KpiDataViewModel.CourseraPivotLocationCityReportViewModel
+                CourseraPivotLocationCityReports = pivotCityReports.Select(x => new KpiDataViewModel.CourseraPivotLocationCityReportViewModel
                 {
                     Id = x.Id,
                     LocationCity = x.LocationCity,
+                    CurrentMembers = x.CurrentMembers ?? 0,
+                    CurrentLearners = x.CurrentLearners ?? 0,
+                    TotalEnrollments = x.TotalEnrollments ?? 0,
+                    TotalCompletedCourses = x.TotalCompletedCourses ?? 0,
+                    AverageProgress = (double?)x.AverageProgress
+                }).ToList(),
+                CourseraPivotLocationCountryReports = pivotCountryReports.Select(x => new KpiDataViewModel.CourseraPivotLocationCountryReportViewModel
+                {
+                    Id = x.Id,
+                    LocationCountry = x.LocationCountry,
                     CurrentMembers = x.CurrentMembers ?? 0,
                     CurrentLearners = x.CurrentLearners ?? 0,
                     TotalEnrollments = x.TotalEnrollments ?? 0,
@@ -435,7 +476,7 @@ namespace MBBS.Dashboard.web.Controllers
                     Id = x.Id,
                     Name = x.Name,
                     Course = x.Course,
-                    OverallProgress = (double?)x.OverallProgress, // Fixed: Changed from AverageProgress to OverallProgress
+                    OverallProgress = (double?)x.OverallProgress,
                     Completed = x.Completed,
                     EstimatedLearningHours = (double?)x.EstimatedLearningHours ?? 0
                 }).ToList(),
@@ -464,7 +505,8 @@ namespace MBBS.Dashboard.web.Controllers
                     Mentor = x.Mentor,
                     Mentee = x.Mentee,
                     Date = x.Date,
-                    MethodOfContact = x.MethodOfContact
+                    MethodOfContact = x.MethodOfContact,
+                    Comment = x.Comment
                 }).ToList(),
                 ActivityLogs = activityLogs.Select(x => new ActivityLogViewModel
                 {
@@ -473,7 +515,7 @@ namespace MBBS.Dashboard.web.Controllers
                 }).ToList()
             };
 
-            // More debugging logs for key metrics
+            // Debugging logs for key metrics
             Console.WriteLine($"GoogleCertificationKPIs.TotalParticipants: {viewModel.GoogleCertificationKPIs.TotalParticipants}");
             Console.WriteLine($"MentoringProgramKPIs.TotalMentoringSessions: {viewModel.MentoringProgramKPIs.TotalMentoringSessions}");
             Console.WriteLine($"ScholarshipApplicationKPIs.TotalApplications: {viewModel.ScholarshipApplicationKPIs.TotalApplications}");

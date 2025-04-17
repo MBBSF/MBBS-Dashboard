@@ -1,469 +1,8 @@
 ﻿@model MBBS.Dashboard.web.Models.DashboardViewModel
 
 @{
-    ViewBag.Title = "Dashboard";
+    ViewData["Title"] = "Dashboard";
 }
-
-<div class="container-fluid">
-    <h2 class="mb-4">Dashboard</h2>
-
-    @if (Model == null)
-    {
-        <div class="alert alert-warning" role="alert">
-            No dashboard data available.
-        </div>
-    }
-    else
-    {
-        <!-- Search Bar and Export Buttons -->
-        <div class="mb-4 d-flex justify-content-between align-items-center">
-            <form asp-action="ViewDataByPlatform" method="get" class="d-flex flex-grow-1 me-2">
-                <input type="hidden" name="platformId" value="@Model.PlatformId" />
-                <input type="hidden" name="reportType" value="@Model.CurrentReportType" />
-                <div class="input-group w-100">
-                    <input type="text" class="form-control" name="searchQuery" value="@Model.SearchQuery" placeholder="Search across all tables..." />
-                    <button type="submit" class="btn btn-primary">Search</button>
-                    @if (!string.IsNullOrEmpty(Model.SearchQuery))
-                    {
-                        <a asp-action="ViewDataByPlatform" asp-route-platformId="@Model.PlatformId" asp-route-reportType="@Model.CurrentReportType" class="btn btn-outline-secondary ms-2">Clear</a>
-                    }
-                </div>
-            </form>
-            <div class="custom-dropdown">
-                <button class="dropdown-toggle" onclick="toggleDropdown()">Export</button>
-                <div class="dropdown-menu">
-                    <a class="dropdown-item" href="#" onclick="exportToCSV()">Export to CSV</a>
-                    <a class="dropdown-item" href="#" onclick="exportToPDF()">Export to PDF</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Key Performance Metrics -->
-        <h3 class="mb-3">Key Performance Metrics</h3>
-        <div class="row g-4">
-            <!-- Google Certification Program -->
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">Google Certification Program</h4>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><strong>Total Participants:</strong> @Model.GoogleCertificationKPIs.TotalParticipants</li>
-                            <li class="list-group-item"><strong>Completed Certifications:</strong> @Model.GoogleCertificationKPIs.CompletedCertifications <small>(Specializations & Courses)</small></li>
-                            <li class="list-group-item"><strong>Completion Rate:</strong> @Model.GoogleCertificationKPIs.CompletionRate.ToString("P2")</li>
-                            <li class="list-group-item"><strong>Active Learners:</strong> @Model.GoogleCertificationKPIs.ActiveLearners</li>
-                        </ul>
-
-                        <h5 class="mt-3">Specialization Distribution</h5>
-                        <ul class="list-group">
-                            @foreach (var kvp in Model.GoogleCertificationKPIs.SpecializationDistribution.OrderByDescending(pair => pair.Value))
-                            {
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    @kvp.Key
-                                    <span class="badge bg-primary rounded-pill">@kvp.Value</span>
-                                </li>
-                            }
-                        </ul>
-
-                        <h5 class="mt-3">Location Distribution</h5>
-                        <ul class="list-group">
-                            @foreach (var kvp in Model.GoogleCertificationKPIs.LocationDistribution.OrderByDescending(pair => pair.Value))
-                            {
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    @kvp.Key
-                                    <span class="badge bg-primary rounded-pill">@kvp.Value</span>
-                                </li>
-                            }
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Mentoring Program -->
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-success text-white">
-                        <h4 class="mb-0">Mentoring Program</h4>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><strong>Total Sessions:</strong> @Model.MentoringProgramKPIs.TotalMentoringSessions</li>
-                            <li class="list-group-item"><strong>Unique Mentees:</strong> @Model.MentoringProgramKPIs.UniqueMentees</li>
-                            <li class="list-group-item"><strong>Avg Sessions/Mentee:</strong> @Model.MentoringProgramKPIs.AverageSessionsPerMentee.ToString("F1")</li>
-                        </ul>
-
-                        <h5 class="mt-3">Top Mentors</h5>
-                        <ul class="list-group">
-                            @foreach (var mentor in Model.MentoringProgramKPIs.TopMentors)
-                            {
-                                var sessionCount = Model.GoogleFormsPlatformData.Count(x => x.Mentor == mentor);
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    @mentor
-                                    <span class="badge bg-success rounded-pill">@sessionCount</span>
-                                </li>
-                            }
-                        </ul>
-
-                        <h5 class="mt-3">Top Contact Method Preferences</h5>
-                        <ul class="list-group">
-                            @foreach (var kvp in Model.MentoringProgramKPIs.ContactMethodPreference.OrderByDescending(pair => pair.Value))
-                            {
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    @(kvp.Key ?? "Unknown")
-                                    <span class="badge bg-success rounded-pill">@kvp.Value</span>
-                                </li>
-                            }
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Scholarship Application Program -->
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-info text-white">
-                        <h4 class="mb-0">Scholarship Application Program</h4>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><strong>Total Applications:</strong> @Model.ScholarshipApplicationKPIs.TotalApplications</li>
-                            <li class="list-group-item"><strong>Phone Provision Rate:</strong> @Model.ScholarshipApplicationKPIs.PhoneNumberProvisionRate.ToString("P2")</li>
-                            <li class="list-group-item"><strong>Average GPA:</strong> @Model.ScholarshipApplicationKPIs.AverageGPA.ToString("F2")</li>
-                        </ul>
-
-                        <h5 class="mt-3">Top Intended Majors</h5>
-                        <ul class="list-group">
-                            @foreach (var kvp in Model.ScholarshipApplicationKPIs.IntendedMajorDistribution.OrderByDescending(pair => pair.Value))
-                            {
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    @kvp.Key
-                                    <span class="badge bg-info rounded-pill">@kvp.Value</span>
-                                </li>
-                            }
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Platform Data Section -->
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <h3 class="mb-3">Platform Data</h3>
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Quick Platform Overview</h5>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item">Coursera Users: @Model.KpiData.TotalCourseraUsers</li>
-                            <li class="list-group-item">Cognito Users: @Model.KpiData.TotalCognitoUsers</li>
-                            <li class="list-group-item">Google Forms Users: @Model.KpiData.TotalGoogleFormsUsers</li>
-                        </ul>
-                        <div class="mt-3 d-flex gap-2">
-                            <a href="@Url.Action("ViewDataByPlatform", new { platformId = 1, reportType = "specialization" })" class="btn btn-sm btn-outline-primary">Coursera Details</a>
-                            <a href="@Url.Action("ViewDataByPlatform", new { platformId = 2 })" class="btn btn-sm btn-outline-primary">Cognito Details</a>
-                            <a href="@Url.Action("ViewDataByPlatform", new { platformId = 3 })" class="btn btn-sm btn-outline-primary">Google Forms Details</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Platform-Specific Reports Section -->
-        @if (Model.PlatformId > 0)
-        {
-            <div class="mt-4">
-                <h3 class="mb-3">Platform-Specific Data</h3>
-
-                @if (Model.PlatformId == 1) // Coursera
-                {
-                    <h4>Coursera Reports</h4>
-                    <ul class="nav nav-tabs mb-3" id="courseraReportsTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link @(Model.CurrentReportType == "specialization" ? "active" : "")"
-                               href="@Url.Action("ViewDataByPlatform", new { platformId = 1, reportType = "specialization" })"
-                               role="tab">Specialization Report</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link @(Model.CurrentReportType == "membership" ? "active" : "")"
-                               href="@Url.Action("ViewDataByPlatform", new { platformId = 1, reportType = "membership" })"
-                               role="tab">Membership Report</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link @(Model.CurrentReportType == "location" ? "active" : "")"
-                               href="@Url.Action("ViewDataByPlatform", new { platformId = 1, reportType = "location" })"
-                               role="tab">Location Report</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link @(Model.CurrentReportType == "usage" ? "active" : "")"
-                               href="@Url.Action("ViewDataByPlatform", new { platformId = 1, reportType = "usage" })"
-                               role="tab">Usage Report</a>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content" id="courseraReportsTabContent">
-                        <!-- Specialization Report -->
-                        <div class="tab-pane fade @(Model.CurrentReportType == "specialization" ? "show active" : "")" id="specialization" role="tabpanel">
-                            <form asp-action="DeleteCourseraRecords" method="post">
-                                <input type="hidden" name="reportType" value="specialization" />
-                                <input type="hidden" name="platformId" value="1" />
-                                <div class="mb-3">
-                                    <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-striped table-hover">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th><input type="checkbox" id="selectAllSpecialization" onclick="toggleCheckboxes(this, 'specializationIds')" class="translucent-checkbox" /></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="specialization" asp-route-sortBy="Name" asp-route-sortOrder="@(Model.CurrentSortOrder)">Name</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="specialization" asp-route-sortBy="Email" asp-route-sortOrder="@(Model.CurrentSortOrder)">Email</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="specialization" asp-route-sortBy="Specialization" asp-route-sortOrder="@(Model.CurrentSortOrder)">Specialization</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="specialization" asp-route-sortBy="Completed" asp-route-sortOrder="@(Model.CurrentSortOrder)">Completed</a></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var item in Model.CourseraPlatformData ?? new List<PlatformDataViewModel.CourseraSpecializationData>())
-                                            {
-                                                <tr>
-                                                    <td><input type="checkbox" name="ids" value="@item.Id" class="specializationIds translucent-checkbox" /></td>
-                                                    <td>@item.Name</td>
-                                                    <td>@item.Email</td>
-                                                    <td>@item.Specialization</td>
-                                                    <td>@item.Completed</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Membership Report -->
-                        <div class="tab-pane fade @(Model.CurrentReportType == "membership" ? "show active" : "")" id="membership" role="tabpanel">
-                            <form asp-action="DeleteCourseraRecords" method="post">
-                                <input type="hidden" name="reportType" value="membership" />
-                                <input type="hidden" name="platformId" value="1" />
-                                <div class="mb-3">
-                                    <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-striped table-hover">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th><input type="checkbox" id="selectAllMembership" onclick="toggleCheckboxes(this, 'membershipIds')" class="translucent-checkbox" /></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="Name" asp-route-sortOrder="@(Model.CurrentSortOrder)">Name</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="Email" asp-route-sortOrder="@(Model.CurrentSortOrder)">Email</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="ProgramName" asp-route-sortOrder="@(Model.CurrentSortOrder)">Program</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="EnrolledCourses" asp-route-sortOrder="@(Model.CurrentSortOrder)">Enrolled Courses</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="CompletedCourses" asp-route-sortOrder="@(Model.CurrentSortOrder)">Completed Courses</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="MemberState" asp-route-sortOrder="@(Model.CurrentSortOrder)">Status</a></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var report in Model.CourseraMembershipReports ?? new List<KpiDataViewModel.CourseraMembershipReportViewModel>())
-                                            {
-                                                <tr>
-                                                    <td><input type="checkbox" name="ids" value="@report.Id" class="membershipIds translucent-checkbox" /></td>
-                                                    <td>@report.Name</td>
-                                                    <td>@report.Email</td>
-                                                    <td>@report.ProgramName</td>
-                                                    <td>@report.EnrolledCourses</td>
-                                                    <td>@report.CompletedCourses</td>
-                                                    <td>@report.MemberState</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Location Report -->
-                        <div class="tab-pane fade @(Model.CurrentReportType == "location" ? "show active" : "")" id="location" role="tabpanel">
-                            <form asp-action="DeleteCourseraRecords" method="post">
-                                <input type="hidden" name="reportType" value="location" />
-                                <input type="hidden" name="platformId" value="1" />
-                                <div class="mb-3">
-                                    <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-striped table-hover">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th><input type="checkbox" id="selectAllLocation" onclick="toggleCheckboxes(this, 'locationIds')" class="translucent-checkbox" /></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location" asp-route-sortBy="LocationCity" asp-route-sortOrder="@(Model.CurrentSortOrder)">Location City</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location" asp-route-sortBy="CurrentMembers" asp-route-sortOrder="@(Model.CurrentSortOrder)">Current Members</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location" asp-route-sortBy="CurrentLearners" asp-route-sortOrder="@(Model.CurrentSortOrder)">Current Learners</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location" asp-route-sortBy="TotalEnrollments" asp-route-sortOrder="@(Model.CurrentSortOrder)">Total Enrollments</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location" asp-route-sortBy="TotalCompletedCourses" asp-route-sortOrder="@(Model.CurrentSortOrder)">Completed Courses</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location" asp-route-sortBy="AverageProgress" asp-route-sortOrder="@(Model.CurrentSortOrder)">Avg Progress</a></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var report in Model.CourseraPivotLocationCityReports ?? new List<KpiDataViewModel.CourseraPivotLocationCityReportViewModel>())
-                                            {
-                                                <tr>
-                                                    <td><input type="checkbox" name="ids" value="@report.Id" class="locationIds translucent-checkbox" /></td>
-                                                    <td>@report.LocationCity</td>
-                                                    <td>@report.CurrentMembers</td>
-                                                    <td>@report.CurrentLearners</td>
-                                                    <td>@report.TotalEnrollments</td>
-                                                    <td>@report.TotalCompletedCourses</td>
-                                                    <td>@(report.AverageProgress?.ToString("P0") ?? "N/A")</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Usage Report -->
-                        <div class="tab-pane fade @(Model.CurrentReportType == "usage" ? "show active" : "")" id="usage" role="tabpanel">
-                            <form asp-action="DeleteCourseraRecords" method="post">
-                                <input type="hidden" name="reportType" value="usage" />
-                                <input type="hidden" name="platformId" value="1" />
-                                <div class="mb-3">
-                                    <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-striped table-hover">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th><input type="checkbox" id="selectAllUsage" onclick="toggleCheckboxes(this, 'usageIds')" class="translucent-checkbox" /></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="usage" asp-route-sortBy="Name" asp-route-sortOrder="@(Model.CurrentSortOrder)">Name</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="usage" asp-route-sortBy="Course" asp-route-sortOrder="@(Model.CurrentSortOrder)">Course</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="usage" asp-route-sortBy="OverallProgress" asp-route-sortOrder="@(Model.CurrentSortOrder)">Progress</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="usage" asp-route-sortBy="Completed" asp-route-sortOrder="@(Model.CurrentSortOrder)">Completed</a></th>
-                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="usage" asp-route-sortBy="EstimatedLearningHours" asp-route-sortOrder="@(Model.CurrentSortOrder)">Learning Hours</a></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var report in Model.CourseraUsageReports ?? new List<KpiDataViewModel.CourseraUsageReportViewModel>())
-                                            {
-                                                <tr>
-                                                    <td><input type="checkbox" name="ids" value="@report.Id" class="usageIds translucent-checkbox" /></td>
-                                                    <td>@report.Name</td>
-                                                    <td>@report.Course</td>
-                                                    <td>@(report.OverallProgress?.ToString("P0") ?? "N/A")</td>
-                                                    <td>@report.Completed</td>
-                                                    <td>@report.EstimatedLearningHours</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                }
-                else if (Model.PlatformId == 2) // Cognito
-                {
-                    <h4>Cognito Reports</h4>
-                    <form asp-action="DeleteCognitoRecords" method="post">
-                        <input type="hidden" name="platformId" value="2" />
-                        <div class="mb-3">
-                            <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th><input type="checkbox" id="selectAllCognito" onclick="toggleCheckboxes(this, 'cognitoIds')" class="translucent-checkbox" /></th>
-                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="Name_First" asp-route-sortOrder="@(Model.CurrentSortOrder)">First Name</a></th>
-                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="Name_Last" asp-route-sortOrder="@(Model.CurrentSortOrder)">Last Name</a></th>
-                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="Phone" asp-route-sortOrder="@(Model.CurrentSortOrder)">Phone</a></th>
-                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="IntendedMajor" asp-route-sortOrder="@(Model.CurrentSortOrder)">Intended Major</a></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in Model.CognitoPlatformData ?? new List<PlatformDataViewModel.CognitoData>())
-                                    {
-                                        <tr>
-                                            <td><input type="checkbox" name="ids" value="@item.Id" class="cognitoIds translucent-checkbox" /></td>
-                                            <td>@item.Name_First</td>
-                                            <td>@item.Name_Last</td>
-                                            <td>@item.Phone</td>
-                                            <td>@item.IntendedMajor</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </form>
-                }
-                else if (Model.PlatformId == 3) // Google Forms
-                {
-                    <h4>Google Forms Reports</h4>
-                    <form asp-action="DeleteGoogleFormsRecords" method="post">
-                        <input type="hidden" name="platformId" value="3" />
-                        <div class="mb-3">
-                            <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th><input type="checkbox" id="selectAllGoogleForms" onclick="toggleCheckboxes(this, 'googleFormsIds')" class="translucent-checkbox" /></th>
-                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Mentor" asp-route-sortOrder="@(Model.CurrentSortOrder)">Mentor</a></th>
-                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Mentee" asp-route-sortOrder="@(Model.CurrentSortOrder)">Mentee</a></th>
-                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Date" asp-route-sortOrder="@(Model.CurrentSortOrder)">Date</a></th>
-                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="MethodOfContact" asp-route-sortOrder="@(Model.CurrentSortOrder)">Method of Contact</a></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in Model.GoogleFormsPlatformData ?? new List<PlatformDataViewModel.GoogleFormsData>())
-                                    {
-                                        <tr>
-                                            <td><input type="checkbox" name="ids" value="@item.Id" class="googleFormsIds translucent-checkbox" /></td>
-                                            <td>@item.Mentor</td>
-                                            <td>@item.Mentee</td>
-                                            <td>@(item.Date?.ToString("d") ?? "N/A")</td>
-                                            <td>@item.MethodOfContact</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </form>
-                }
-            </div>
-        }
-
-        <!-- Activity Logs Section -->
-        <div class="mt-4">
-            <h3 class="mb-3">Activity Logs</h3>
-            @if (Model.ActivityLogs != null && Model.ActivityLogs.Any())
-            {
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var log in Model.ActivityLogs)
-                            {
-                                <tr>
-                                    <td>@log.Timestamp.ToString("g")</td>
-                                    <td>@log.Action</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <div class="alert alert-info" role="alert">
-                    No activity logs found.
-                </div>
-            }
-        </div>
-    }
-</div>
 
 <!-- Include jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -608,190 +147,708 @@
         }
 </style>
 
-<!-- JavaScript -->
-<script>
-    // Pass model data to JavaScript with PascalCase naming
-    const modelData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+<div class="container-fluid">
+    <h2 class="mb-4">Dashboard</h2>
 
-    // Detailed logging to inspect the data
-    console.log("Full Model Data:", modelData);
-    console.log("GoogleCertificationKPIs:", modelData.GoogleCertificationKPIs);
-    console.log("MentoringProgramKPIs:", modelData.MentoringProgramKPIs);
-    console.log("ScholarshipApplicationKPIs:", modelData.ScholarshipApplicationKPIs);
-    console.log("GoogleFormsPlatformData:", modelData.GoogleFormsPlatformData);
-
-    function toggleCheckboxes(source, className) {
-        const checkboxes = document.getElementsByClassName(className);
-        for (let i = 0; i < checkboxes.length; i++) {
-            checkboxes[i].checked = source.checked;
-        }
+    @if (Model == null)
+    {
+        <div class="alert alert-warning" role="alert">
+            No dashboard data available.
+        </div>
     }
-
-    // Toggle dropdown visibility
-    function toggleDropdown() {
-        const dropdownMenu = document.querySelector('.dropdown-menu');
-        dropdownMenu.classList.toggle('show');
-    }
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(event) {
-        const dropdown = document.querySelector('.custom-dropdown');
-        const dropdownMenu = document.querySelector('.dropdown-menu');
-        if (!dropdown.contains(event.target) && dropdownMenu.classList.contains('show')) {
-            dropdownMenu.classList.remove('show');
+    else
+    {
+        <!-- Success/Error Messages -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
         }
-    });
-
-    function exportToCSV() {
-        console.log("Exporting to CSV...");
-        try {
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Category,Metric,Value\n";
-
-            // Google Certification Program
-            const googleKPIs = modelData.GoogleCertificationKPIs || {};
-            csvContent += "Google Certification Program,Total Participants," + (googleKPIs.TotalParticipants || 0) + "\n";
-            csvContent += "Google Certification Program,Completed Certifications," + (googleKPIs.CompletedCertifications || 0) + "\n";
-            csvContent += "Google Certification Program,Completion Rate," + ((googleKPIs.CompletionRate * 100) || 0).toFixed(2) + "%\n";
-            csvContent += "Google Certification Program,Active Learners," + (googleKPIs.ActiveLearners || 0) + "\n";
-            csvContent += "Specialization Distribution,,\n";
-            if (googleKPIs.SpecializationDistribution) {
-                for (let [key, value] of Object.entries(googleKPIs.SpecializationDistribution)) {
-                    csvContent += `Specialization Distribution,"${key}",${value}\n`;
-                }
-            }
-            csvContent += "Location Distribution,,\n";
-            if (googleKPIs.LocationDistribution) {
-                for (let [key, value] of Object.entries(googleKPIs.LocationDistribution)) {
-                    csvContent += `Location Distribution,"${key}",${value}\n`;
-                }
-            }
-
-            // Mentoring Program
-            const mentoringKPIs = modelData.MentoringProgramKPIs || {};
-            csvContent += "Mentoring Program,Total Sessions," + (mentoringKPIs.TotalMentoringSessions || 0) + "\n";
-            csvContent += "Mentoring Program,Unique Mentees," + (mentoringKPIs.UniqueMentees || 0) + "\n";
-            csvContent += "Mentoring Program,Avg Sessions/Mentee," + (mentoringKPIs.AverageSessionsPerMentee || 0).toFixed(1) + "\n";
-            csvContent += "Top 10 Mentors,,\n";
-            if (mentoringKPIs.TopMentors && modelData.GoogleFormsPlatformData) {
-                mentoringKPIs.TopMentors.forEach(mentor => {
-                    const sessionCount = modelData.GoogleFormsPlatformData.filter(x => x.Mentor === mentor).length;
-                    csvContent += `Top 10 Mentors,"${mentor}",${sessionCount}\n`;
-                });
-            }
-            csvContent += "Top 10 Contact Method Preferences,,\n";
-            if (mentoringKPIs.ContactMethodPreference) {
-                for (let [key, value] of Object.entries(mentoringKPIs.ContactMethodPreference)) {
-                    csvContent += `Top 10 Contact Method Preferences,"${key || "Unknown"}",${value}\n`;
-                }
-            }
-
-            // Scholarship Application Program
-            const scholarshipKPIs = modelData.ScholarshipApplicationKPIs || {};
-            csvContent += "Scholarship Application Program,Total Applications," + (scholarshipKPIs.TotalApplications || 0) + "\n";
-            csvContent += "Scholarship Application Program,Phone Provision Rate," + ((scholarshipKPIs.PhoneNumberProvisionRate * 100) || 0).toFixed(2) + "%\n";
-            csvContent += "Scholarship Application Program,Average GPA," + (scholarshipKPIs.AverageGPA || 0).toFixed(2) + "\n";
-            csvContent += "Top 10 Intended Majors,,\n";
-            if (scholarshipKPIs.IntendedMajorDistribution) {
-                for (let [key, value] of Object.entries(scholarshipKPIs.IntendedMajorDistribution)) {
-                    csvContent += `Top 10 Intended Majors,"${key}",${value}\n`;
-                }
-            }
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "dashboard_metrics.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            console.log("CSV export completed.");
-            toggleDropdown(); // Close dropdown after export
-        } catch (error) {
-            console.error("Error exporting to CSV:", error);
-            alert("Failed to export CSV: " + error.message);
-            toggleDropdown(); // Close dropdown even on error
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
         }
-    }
 
-    function exportToPDF() {
-        console.log("Exporting to PDF...");
-        try {
-            if (!window.jspdf || !window.jspdf.jsPDF) {
-                throw new Error("jsPDF library not loaded.");
-            }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+        <!-- Search Bar and Export Buttons -->
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+            <form asp-action="ViewDataByPlatform" method="get" class="d-flex flex-grow-1 me-2">
+                <input type="hidden" name="platformId" value="@Model.PlatformId" />
+                <input type="hidden" name="reportType" value="@Model.CurrentReportType" />
+                <div class="input-group w-100">
+                    <input type="text" class="form-control" name="searchQuery" value="@Model.SearchQuery" placeholder="Search across all tables..." />
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    @if (!string.IsNullOrEmpty(Model.SearchQuery))
+                    {
+                        <a asp-action="ViewDataByPlatform" asp-route-platformId="@Model.PlatformId" asp-route-reportType="@Model.CurrentReportType" class="btn btn-outline-secondary ms-2">Clear</a>
+                    }
+                </div>
+            </form>
+            <div class="custom-dropdown">
+                <button class="dropdown-toggle" onclick="toggleDropdown()">Export</button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="javascript:void(0)" onclick="exportToCSV()">Export to CSV</a>
+                    <a class="dropdown-item" href="javascript:void(0)" onclick="exportToPDF()">Export to PDF</a>
+                </div>
+            </div>
+        </div>
 
-            doc.setFontSize(16);
-            doc.text("Dashboard Metrics", 10, 10);
+        <!-- Key Performance Metrics -->
+        <h3 class="mb-3">Key Performance Metrics</h3>
+        <div class="row g-4">
+            <!-- Google Certification Program -->
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Google Certification Program</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>Total Participants:</strong> @Model.GoogleCertificationKPIs.TotalParticipants</li>
+                            <li class="list-group-item"><strong>Completed Certifications:</strong> @Model.GoogleCertificationKPIs.CompletedCertifications <small>(Specializations & Courses)</small></li>
+                            <li class="list-group-item"><strong>Completion Rate:</strong> @string.Format("{0:P2}", Model.GoogleCertificationKPIs.CompletionRate)</li>
+                            <li class="list-group-item"><strong>Active Learners:</strong> @Model.GoogleCertificationKPIs.ActiveLearners</li>
+                        </ul>
 
-            doc.setFontSize(12);
-            let y = 20;
+                        <h5 class="mt-3">Specialization Distribution</h5>
+                        <ul class="list-group">
+                            @foreach (var kvp in Model.GoogleCertificationKPIs.SpecializationDistribution.OrderByDescending(pair => pair.Value))
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @kvp.Key
+                                    <span class="badge bg-primary rounded-pill">@kvp.Value</span>
+                                </li>
+                            }
+                        </ul>
 
-            // Google Certification Program
-            const googleKPIs = modelData.GoogleCertificationKPIs || {};
-            doc.text("Google Certification Program", 10, y); y += 10;
-            doc.text(`Total Participants: ${googleKPIs.TotalParticipants || 0}`, 10, y); y += 7;
-            doc.text(`Completed Certifications: ${googleKPIs.CompletedCertifications || 0}`, 10, y); y += 7;
-            doc.text(`Completion Rate: ${((googleKPIs.CompletionRate * 100) || 0).toFixed(2)}%`, 10, y); y += 7;
-            doc.text(`Active Learners: ${googleKPIs.ActiveLearners || 0}`, 10, y); y += 7;
-            doc.text("Specialization Distribution", 10, y); y += 10;
-            if (googleKPIs.SpecializationDistribution) {
-                for (let [key, value] of Object.entries(googleKPIs.SpecializationDistribution)) {
-                    doc.text(`${key}: ${value}`, 10, y); y += 7;
+                        <h5 class="mt-3">Location Distribution</h5>
+                        <ul class="list-group">
+                            @foreach (var kvp in Model.GoogleCertificationKPIs.LocationDistribution.OrderByDescending(pair => pair.Value))
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @kvp.Key
+                                    <span class="badge bg-primary rounded-pill">@kvp.Value</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mentoring Program -->
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">Mentoring Program</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>Total Sessions:</strong> @Model.MentoringProgramKPIs.TotalMentoringSessions</li>
+                            <li class="list-group-item"><strong>Unique Mentees:</strong> @Model.MentoringProgramKPIs.UniqueMentees</li>
+                            <li class="list-group-item"><strong>Avg Sessions/Mentee:</strong> @string.Format("{0:F1}", Model.MentoringProgramKPIs.AverageSessionsPerMentee)</li>
+                        </ul>
+
+                        <h5 class="mt-3">Top Mentors</h5>
+                        <ul class="list-group">
+                            @foreach (var mentor in Model.MentoringProgramKPIs.TopMentors)
+                            {
+                                var sessionCount = Model.GoogleFormsPlatformData.Count(x => x.Mentor == mentor);
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @mentor
+                                    <span class="badge bg-success rounded-pill">@sessionCount</span>
+                                </li>
+                            }
+                        </ul>
+
+                        <h5 class="mt-3">Top Contact Method Preferences</h5>
+                        <ul class="list-group">
+                            @foreach (var kvp in Model.MentoringProgramKPIs.ContactMethodPreference.OrderByDescending(pair => pair.Value))
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @(kvp.Key ?? "Unknown")
+                                    <span class="badge bg-success rounded-pill">@kvp.Value</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scholarship Application Program -->
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">Scholarship Application Program</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>Total Applications:</strong> @Model.ScholarshipApplicationKPIs.TotalApplications</li>
+                            <li class="list-group-item"><strong>Phone Provision Rate:</strong> @string.Format("{0:P2}", Model.ScholarshipApplicationKPIs.PhoneNumberProvisionRate)</li>
+                            <li class="list-group-item"><strong>Average GPA:</strong> @string.Format("{0:F2}", Model.ScholarshipApplicationKPIs.AverageGPA)</li>
+                        </ul>
+
+                        <h5 class="mt-3">Top Intended Majors</h5>
+                        <ul class="list-group">
+                            @foreach (var kvp in Model.ScholarshipApplicationKPIs.IntendedMajorDistribution.OrderByDescending(pair => pair.Value))
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @kvp.Key
+                                    <span class="badge bg-info rounded-pill">@kvp.Value</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Platform Data Section -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h3 class="mb-3">Platform Data</h3>
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Quick Platform Overview</h5>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Coursera Users: @Model.KpiData.TotalCourseraUsers</li>
+                            <li class="list-group-item">Cognito Users: @Model.KpiData.TotalCognitoUsers</li>
+                            <li class="list-group-item">Google Forms Users: @Model.KpiData.TotalGoogleFormsUsers</li>
+                        </ul>
+                        <div class="mt-3 d-flex gap-2">
+                            <a href="@Url.Action("ViewDataByPlatform", new { platformId = 1, reportType = "specialization" })" class="btn btn-sm btn-outline-primary">Coursera Details</a>
+                            <a href="@Url.Action("ViewDataByPlatform", new { platformId = 2 })" class="btn btn-sm btn-outline-primary">Cognito Details</a>
+                            <a href="@Url.Action("ViewDataByPlatform", new { platformId = 3 })" class="btn btn-sm btn-outline-primary">Google Forms Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Platform-Specific Reports Section -->
+        @if (Model.PlatformId > 0)
+        {
+            <div class="mt-4">
+                <h3 class="mb-3">Platform-Specific Data</h3>
+
+                @if (Model.PlatformId == 1) // Coursera
+                {
+                    <h4>Coursera Reports</h4>
+                    <ul class="nav nav-tabs mb-3" id="courseraReportsTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link @(Model.CurrentReportType == "specialization" ? "active" : "")"
+                               href="@Url.Action("ViewDataByPlatform", new { platformId = 1, reportType = "specialization" })"
+                               role="tab">Specialization Report</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link @(Model.CurrentReportType == "membership" ? "active" : "")"
+                               href="@Url.Action("ViewDataByPlatform", new { platformId = 1, reportType = "membership" })"
+                               role="tab">Membership Report</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link @(Model.CurrentReportType == "location-city" ? "active" : "")"
+                               href="@Url.Action("ViewDataByPlatform", new { platformId = 1, reportType = "location-city" })"
+                               role="tab">Location City Report</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link @(Model.CurrentReportType == "location-country" ? "active" : "")"
+                               href="@Url.Action("ViewDataByPlatform", new { platformId = 1, reportType = "location-country" })"
+                               role="tab">Location Country Report</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link @(Model.CurrentReportType == "usage" ? "active" : "")"
+                               href="@Url.Action("ViewDataByPlatform", new { platformId = 1, reportType = "usage" })"
+                               role="tab">Usage Report</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="courseraReportsTabContent">
+                        <!-- Specialization Report -->
+                        <div class="tab-pane fade @(Model.CurrentReportType == "specialization" ? "show active" : "")" id="specialization" role="tabpanel">
+                            <form asp-action="DeleteCourseraRecords" method="post">
+                                <input type="hidden" name="reportType" value="specialization" />
+                                <input type="hidden" name="platformId" value="1" />
+                                <div class="mb-3">
+                                    <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th><input type="checkbox" id="selectAllSpecialization" onchange="toggleCheckboxes(this, 'specializationIds')" class="translucent-checkbox" /></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="specialization" asp-route-sortBy="Name" asp-route-sortOrder="@(Model.CurrentSortBy == "Name" ? Model.CurrentSortOrder : "asc")">Name</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="specialization" asp-route-sortBy="Email" asp-route-sortOrder="@(Model.CurrentSortBy == "Email" ? Model.CurrentSortOrder : "asc")">Email</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="specialization" asp-route-sortBy="Specialization" asp-route-sortOrder="@(Model.CurrentSortBy == "Specialization" ? Model.CurrentSortOrder : "asc")">Specialization</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="specialization" asp-route-sortBy="Completed" asp-route-sortOrder="@(Model.CurrentSortBy == "Completed" ? Model.CurrentSortOrder : "asc")">Completed</a></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in Model.CourseraPlatformData ?? new List<MBBS.Dashboard.web.Models.PlatformDataViewModel.CourseraSpecializationData>())
+                                            {
+                                                <tr>
+                                                    <td><input type="checkbox" name="ids" value="@item.Id" class="specializationIds translucent-checkbox" /></td>
+                                                    <td>@item.Name</td>
+                                                    <td>@item.Email</td>
+                                                    <td>@item.Specialization</td>
+                                                    <td>@item.Completed</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Membership Report -->
+                        <div class="tab-pane fade @(Model.CurrentReportType == "membership" ? "show active" : "")" id="membership" role="tabpanel">
+                            <form asp-action="DeleteCourseraRecords" method="post">
+                                <input type="hidden" name="reportType" value="membership" />
+                                <input type="hidden" name="platformId" value="1" />
+                                <div class="mb-3">
+                                    <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th><input type="checkbox" id="selectAllMembership" onchange="toggleCheckboxes(this, 'membershipIds')" class="translucent-checkbox" /></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="Name" asp-route-sortOrder="@(Model.CurrentSortBy == "Name" ? Model.CurrentSortOrder : "asc")">Name</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="Email" asp-route-sortOrder="@(Model.CurrentSortBy == "Email" ? Model.CurrentSortOrder : "asc")">Email</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="ProgramName" asp-route-sortOrder="@(Model.CurrentSortBy == "ProgramName" ? Model.CurrentSortOrder : "asc")">Program</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="EnrolledCourses" asp-route-sortOrder="@(Model.CurrentSortBy == "EnrolledCourses" ? Model.CurrentSortOrder : "asc")">Enrolled Courses</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="CompletedCourses" asp-route-sortOrder="@(Model.CurrentSortBy == "CompletedCourses" ? Model.CurrentSortOrder : "asc")">Completed Courses</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="membership" asp-route-sortBy="MemberState" asp-route-sortOrder="@(Model.CurrentSortBy == "MemberState" ? Model.CurrentSortOrder : "asc")">Status</a></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var report in Model.CourseraMembershipReports ?? new List<MBBS.Dashboard.web.Models.KpiDataViewModel.CourseraMembershipReportViewModel>())
+                                            {
+                                                <tr>
+                                                    <td><input type="checkbox" name="ids" value="@report.Id" class="membershipIds translucent-checkbox" /></td>
+                                                    <td>@report.Name</td>
+                                                    <td>@report.Email</td>
+                                                    <td>@report.ProgramName</td>
+                                                    <td>@report.EnrolledCourses</td>
+                                                    <td>@report.CompletedCourses</td>
+                                                    <td>@report.MemberState</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Location City Report -->
+                        <div class="tab-pane fade @(Model.CurrentReportType == "location-city" ? "show active" : "")" id="location-city" role="tabpanel">
+                            <form asp-action="DeleteCourseraRecords" method="post">
+                                <input type="hidden" name="reportType" value="location-city" />
+                                <input type="hidden" name="platformId" value="1" />
+                                <div class="mb-3">
+                                    <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th><input type="checkbox" id="selectAllLocationCity" onchange="toggleCheckboxes(this, 'locationCityIds')" class="translucent-checkbox" /></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-city" asp-route-sortBy="LocationCity" asp-route-sortOrder="@(Model.CurrentSortBy == "LocationCity" ? Model.CurrentSortOrder : "asc")">Location City</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-city" asp-route-sortBy="CurrentMembers" asp-route-sortOrder="@(Model.CurrentSortBy == "CurrentMembers" ? Model.CurrentSortOrder : "asc")">Current Members</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-city" asp-route-sortBy="CurrentLearners" asp-route-sortOrder="@(Model.CurrentSortBy == "CurrentLearners" ? Model.CurrentSortOrder : "asc")">Current Learners</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-city" asp-route-sortBy="TotalEnrollments" asp-route-sortOrder="@(Model.CurrentSortBy == "TotalEnrollments" ? Model.CurrentSortOrder : "asc")">Total Enrollments</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-city" asp-route-sortBy="TotalCompletedCourses" asp-route-sortOrder="@(Model.CurrentSortBy == "TotalCompletedCourses" ? Model.CurrentSortOrder : "asc")">Completed Courses</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-city" asp-route-sortBy="AverageProgress" asp-route-sortOrder="@(Model.CurrentSortBy == "AverageProgress" ? Model.CurrentSortOrder : "asc")">Avg Progress</a></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var report in Model.CourseraPivotLocationCityReports ?? new List<MBBS.Dashboard.web.Models.KpiDataViewModel.CourseraPivotLocationCityReportViewModel>())
+                                            {
+                                                <tr>
+                                                    <td><input type="checkbox" name="ids" value="@report.Id" class="locationCityIds translucent-checkbox" /></td>
+                                                    <td>@report.LocationCity</td>
+                                                    <td>@report.CurrentMembers</td>
+                                                    <td>@report.CurrentLearners</td>
+                                                    <td>@report.TotalEnrollments</td>
+                                                    <td>@report.TotalCompletedCourses</td>
+                                                    <td>@string.Format("{0:F2}%", report.AverageProgress)</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Location Country Report -->
+                        <div class="tab-pane fade @(Model.CurrentReportType == "location-country" ? "show active" : "")" id="location-country" role="tabpanel">
+                            <form asp-action="DeleteCourseraRecords" method="post">
+                                <input type="hidden" name="reportType" value="location-country" />
+                                <input type="hidden" name="platformId" value="1" />
+                                <div class="mb-3">
+                                    <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th><input type="checkbox" id="selectAllLocationCountry" onchange="toggleCheckboxes(this, 'locationCountryIds')" class="translucent-checkbox" /></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-country" asp-route-sortBy="LocationCountry" asp-route-sortOrder="@(Model.CurrentSortBy == "LocationCountry" ? Model.CurrentSortOrder : "asc")">Location Country</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-country" asp-route-sortBy="CurrentMembers" asp-route-sortOrder="@(Model.CurrentSortBy == "CurrentMembers" ? Model.CurrentSortOrder : "asc")">Current Members</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-country" asp-route-sortBy="CurrentLearners" asp-route-sortOrder="@(Model.CurrentSortBy == "CurrentLearners" ? Model.CurrentSortOrder : "asc")">Current Learners</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-country" asp-route-sortBy="TotalEnrollments" asp-route-sortOrder="@(Model.CurrentSortBy == "TotalEnrollments" ? Model.CurrentSortOrder : "asc")">Total Enrollments</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-country" asp-route-sortBy="TotalCompletedCourses" asp-route-sortOrder="@(Model.CurrentSortBy == "TotalCompletedCourses" ? Model.CurrentSortOrder : "asc")">Completed Courses</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="location-country" asp-route-sortBy="AverageProgress" asp-route-sortOrder="@(Model.CurrentSortBy == "AverageProgress" ? Model.CurrentSortOrder : "asc")">Avg Progress</a></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var report in Model.CourseraPivotLocationCountryReports ?? new List<MBBS.Dashboard.web.Models.KpiDataViewModel.CourseraPivotLocationCountryReportViewModel>())
+                                            {
+                                                <tr>
+                                                    <td><input type="checkbox" name="ids" value="@report.Id" class="locationCountryIds translucent-checkbox" /></td>
+                                                    <td>@report.LocationCountry</td>
+                                                    <td>@report.CurrentMembers</td>
+                                                    <td>@report.CurrentLearners</td>
+                                                    <td>@report.TotalEnrollments</td>
+                                                    <td>@report.TotalCompletedCourses</td>
+                                                    <td>@string.Format("{0:F2}%", report.AverageProgress)</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Usage Report -->
+                        <div class="tab-pane fade @(Model.CurrentReportType == "usage" ? "show active" : "")" id="usage" role="tabpanel">
+                            <form asp-action="DeleteCourseraRecords" method="post">
+                                <input type="hidden" name="reportType" value="usage" />
+                                <input type="hidden" name="platformId" value="1" />
+                                <div class="mb-3">
+                                    <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th><input type="checkbox" id="selectAllUsage" onchange="toggleCheckboxes(this, 'usageIds')" class="translucent-checkbox" /></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="usage" asp-route-sortBy="Name" asp-route-sortOrder="@(Model.CurrentSortBy == "Name" ? Model.CurrentSortOrder : "asc")">Name</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="usage" asp-route-sortBy="Course" asp-route-sortOrder="@(Model.CurrentSortBy == "Course" ? Model.CurrentSortOrder : "asc")">Course</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="usage" asp-route-sortBy="OverallProgress" asp-route-sortOrder="@(Model.CurrentSortBy == "OverallProgress" ? Model.CurrentSortOrder : "asc")">Progress</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="usage" asp-route-sortBy="Completed" asp-route-sortOrder="@(Model.CurrentSortBy == "Completed" ? Model.CurrentSortOrder : "asc")">Completed</a></th>
+                                                <th><a asp-action="ViewDataByPlatform" asp-route-platformId="1" asp-route-reportType="usage" asp-route-sortBy="EstimatedLearningHours" asp-route-sortOrder="@(Model.CurrentSortBy == "EstimatedLearningHours" ? Model.CurrentSortOrder : "asc")">Learning Hours</a></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var report in Model.CourseraUsageReports ?? new List<MBBS.Dashboard.web.Models.KpiDataViewModel.CourseraUsageReportViewModel>())
+                                            {
+                                                <tr>
+                                                    <td><input type="checkbox" name="ids" value="@report.Id" class="usageIds translucent-checkbox" /></td>
+                                                    <td>@report.Name</td>
+                                                    <td>@report.Course</td>
+                                                    <td>@string.Format("{0:F2}%", report.OverallProgress)</td>
+                                                    <td>@report.Completed</td>
+                                                    <td>@report.EstimatedLearningHours</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 }
-            }
-            y += 3;
-            doc.text("Location Distribution", 10, y); y += 10;
-            if (googleKPIs.LocationDistribution) {
-                for (let [key, value] of Object.entries(googleKPIs.LocationDistribution)) {
-                    doc.text(`${key}: ${value}`, 10, y); y += 7;
+                else if (Model.PlatformId == 2) // Cognito
+                {
+                    <h4>Cognito Reports</h4>
+                    <form asp-action="DeleteCognitoRecords" method="post">
+                        <input type="hidden" name="platformId" value="2" />
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th><input type="checkbox" id="selectAllCognito" onchange="toggleCheckboxes(this, 'cognitoIds')" class="translucent-checkbox" /></th>
+                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="Name_First" asp-route-sortOrder="@(Model.CurrentSortBy == "Name_First" ? Model.CurrentSortOrder : "asc")">First Name</a></th>
+                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="Name_Last" asp-route-sortOrder="@(Model.CurrentSortBy == "Name_Last" ? Model.CurrentSortOrder : "asc")">Last Name</a></th>
+                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="Phone" asp-route-sortOrder="@(Model.CurrentSortBy == "Phone" ? Model.CurrentSortOrder : "asc")">Phone</a></th>
+                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="2" asp-route-sortBy="IntendedMajor" asp-route-sortOrder="@(Model.CurrentSortBy == "IntendedMajor" ? Model.CurrentSortOrder : "asc")">Intended Major</a></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CognitoPlatformData ?? new List<MBBS.Dashboard.web.Models.PlatformDataViewModel.CognitoData>())
+                                    {
+                                        <tr>
+                                            <td><input type="checkbox" name="ids" value="@item.Id" class="cognitoIds translucent-checkbox" /></td>
+                                            <td>@item.Name_First</td>
+                                            <td>@item.Name_Last</td>
+                                            <td>@item.Phone</td>
+                                            <td>@item.IntendedMajor</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
                 }
-            }
-            y += 3;
-
-            // Mentoring Program
-            const mentoringKPIs = modelData.MentoringProgramKPIs || {};
-            doc.text("Mentoring Program", 10, y); y += 10;
-            doc.text(`Total Sessions: ${mentoringKPIs.TotalMentoringSessions || 0}`, 10, y); y += 7;
-            doc.text(`Unique Mentees: ${mentoringKPIs.UniqueMentees || 0}`, 10, y); y += 7;
-            doc.text(`Avg Sessions/Mentee: ${(mentoringKPIs.AverageSessionsPerMentee || 0).toFixed(1)}`, 10, y); y += 7;
-            doc.text("Top 10 Mentors:", 10, y); y += 7;
-            if (mentoringKPIs.TopMentors && modelData.GoogleFormsPlatformData) {
-                mentoringKPIs.TopMentors.forEach(mentor => {
-                    const sessionCount = modelData.GoogleFormsPlatformData.filter(x => x.Mentor === mentor).length;
-                    doc.text(`${mentor}: ${sessionCount}`, 15, y); y += 7;
-                });
-            }
-            doc.text("Top 10 Contact Method Preferences:", 10, y); y += 7;
-            if (mentoringKPIs.ContactMethodPreference) {
-                for (let [key, value] of Object.entries(mentoringKPIs.ContactMethodPreference)) {
-                    doc.text(`${key || "Unknown"}: ${value}`, 15, y); y += 7;
+                else if (Model.PlatformId == 3) // Google Forms
+                {
+                    <h4>Google Forms Reports</h4>
+                    <form asp-action="DeleteGoogleFormsRecords" method="post">
+                        <input type="hidden" name="platformId" value="3" />
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-sm btn-pink" onclick="return confirm('Are you sure you want to delete the selected records?');">Delete Selected</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th><input type="checkbox" id="selectAllGoogleForms" onchange="toggleCheckboxes(this, 'googleFormsIds')" class="translucent-checkbox" /></th>
+                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Mentor" asp-route-sortOrder="@(Model.CurrentSortBy == "Mentor" ? Model.CurrentSortOrder : "asc")">Mentor</a></th>
+                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Mentee" asp-route-sortOrder="@(Model.CurrentSortBy == "Mentee" ? Model.CurrentSortOrder : "asc")">Mentee</a></th>
+                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Date" asp-route-sortOrder="@(Model.CurrentSortBy == "Date" ? Model.CurrentSortOrder : "asc")">Date</a></th>
+                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="MethodOfContact" asp-route-sortOrder="@(Model.CurrentSortBy == "MethodOfContact" ? Model.CurrentSortOrder : "asc")">Method of Contact</a></th>
+                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Comment" asp-route-sortOrder="@(Model.CurrentSortBy == "Comment" ? Model.CurrentSortOrder : "asc")">Comment</a></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.GoogleFormsPlatformData ?? new List<MBBS.Dashboard.web.Models.PlatformDataViewModel.GoogleFormsData>())
+                                    {
+                                        <tr>
+                                            <td><input type="checkbox" name="ids" value="@item.Id" class="googleFormsIds translucent-checkbox" /></td>
+                                            <td>@item.Mentor</td>
+                                            <td>@item.Mentee</td>
+                                            <td>@(item.Date?.ToString("yyyy-MM-dd") ?? "N/A")</td>
+                                            <td>@item.MethodOfContact</td>
+                                            <td>@item.Comment</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
                 }
-            }
-            y += 3;
-
-            // Scholarship Application Program
-            const scholarshipKPIs = modelData.ScholarshipApplicationKPIs || {};
-            doc.text("Scholarship Application Program", 10, y); y += 10;
-            doc.text(`Total Applications: ${scholarshipKPIs.TotalApplications || 0}`, 10, y); y += 7;
-            doc.text(`Phone Provision Rate: ${((scholarshipKPIs.PhoneNumberProvisionRate * 100) || 0).toFixed(2)}%`, 10, y); y += 7;
-            doc.text(`Average GPA: ${(scholarshipKPIs.AverageGPA || 0).toFixed(2)}`, 10, y); y += 7;
-            doc.text("Top 10 Intended Majors:", 10, y); y += 7;
-            if (scholarshipKPIs.IntendedMajorDistribution) {
-                for (let [key, value] of Object.entries(scholarshipKPIs.IntendedMajorDistribution)) {
-                    doc.text(`${key}: ${value}`, 15, y); y += 7;
-                }
-            }
-
-            doc.save("dashboard_metrics.pdf");
-            console.log("PDF export completed.");
-            toggleDropdown(); // Close dropdown after export
-        } catch (error) {
-            console.error("Error exporting to PDF:", error);
-            alert("Failed to export PDF: " + error.message);
-            toggleDropdown(); // Close dropdown even on error
+            </div>
         }
+
+        <!-- Activity Logs Section -->
+        <div class="mt-4">
+            <h3 class="mb-3">Activity Logs</h3>
+            @if (Model.ActivityLogs != null && Model.ActivityLogs.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in Model.ActivityLogs)
+                            {
+                                <tr>
+                                    <td>@log.Timestamp.ToString("g")</td>
+                                    <td>@log.Action</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info" role="alert">
+                    No activity logs found.
+                </div>
+            }
+        </div>
     }
-</script>
+</div>
+
+@section Scripts {
+    <script>
+        // Pass model data to JavaScript with PascalCase naming
+        const modelData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
+
+        // Detailed logging to inspect the data
+        console.log("Full Model Data:", modelData);
+        console.log("GoogleCertificationKPIs:", modelData.GoogleCertificationKPIs);
+        console.log("MentoringProgramKPIs:", modelData.MentoringProgramKPIs);
+        console.log("ScholarshipApplicationKPIs:", modelData.ScholarshipApplicationKPIs);
+        console.log("GoogleFormsPlatformData:", modelData.GoogleFormsPlatformData);
+
+        function toggleCheckboxes(source, className) {
+            const checkboxes = document.getElementsByClassName(className);
+            for (let i = 0; i < checkboxes.length; i++) {
+                checkboxes[i].checked = source.checked;
+            }
+        }
+
+        // Toggle dropdown visibility
+        function toggleDropdown() {
+            const dropdownMenu = document.querySelector('.dropdown-menu');
+            dropdownMenu.classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.custom-dropdown');
+            const dropdownMenu = document.querySelector('.dropdown-menu');
+            if (!dropdown.contains(event.target) && dropdownMenu.classList.contains('show')) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+
+        function exportToCSV() {
+            console.log("Exporting to CSV...");
+            try {
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Category,Metric,Value\n";
+
+                // Google Certification Program
+                const googleKPIs = modelData.GoogleCertificationKPIs || {};
+                csvContent += "Google Certification Program,Total Participants," + (googleKPIs.TotalParticipants || 0) + "\n";
+                csvContent += "Google Certification Program,Completed Certifications," + (googleKPIs.CompletedCertifications || 0) + "\n";
+                csvContent += "Google Certification Program,Completion Rate," + ((googleKPIs.CompletionRate * 100) || 0).toFixed(2) + "%\n";
+                csvContent += "Google Certification Program,Active Learners," + (googleKPIs.ActiveLearners || 0) + "\n";
+                csvContent += "Specialization Distribution,,\n";
+                if (googleKPIs.SpecializationDistribution) {
+                    for (let [key, value] of Object.entries(googleKPIs.SpecializationDistribution)) {
+                        csvContent += `Specialization Distribution,"${key}",${value}\n`;
+                    }
+                }
+                csvContent += "Location Distribution,,\n";
+                if (googleKPIs.LocationDistribution) {
+                    for (let [key, value] of Object.entries(googleKPIs.LocationDistribution)) {
+                        csvContent += `Location Distribution,"${key}",${value}\n`;
+                    }
+                }
+
+                // Mentoring Program
+                const mentoringKPIs = modelData.MentoringProgramKPIs || {};
+                csvContent += "Mentoring Program,Total Sessions," + (mentoringKPIs.TotalMentoringSessions || 0) + "\n";
+                csvContent += "Mentoring Program,Unique Mentees," + (mentoringKPIs.UniqueMentees || 0) + "\n";
+                csvContent += "Mentoring Program,Avg Sessions/Mentee," + (mentoringKPIs.AverageSessionsPerMentee || 0).toFixed(1) + "\n";
+                csvContent += "Top 10 Mentors,,\n";
+                if (mentoringKPIs.TopMentors && modelData.GoogleFormsPlatformData) {
+                    mentoringKPIs.TopMentors.forEach(mentor => {
+                        const sessionCount = modelData.GoogleFormsPlatformData.filter(x => x.Mentor === mentor).length;
+                        csvContent += `Top 10 Mentors,"${mentor}",${sessionCount}\n`;
+                    });
+                }
+                csvContent += "Top 10 Contact Method Preferences,,\n";
+                if (mentoringKPIs.ContactMethodPreference) {
+                    for (let [key, value] of Object.entries(mentoringKPIs.ContactMethodPreference)) {
+                        csvContent += `Top 10 Contact Method Preferences,"${key || "Unknown"}",${value}\n`;
+                    }
+                }
+
+                // Scholarship Application Program
+                const scholarshipKPIs = modelData.ScholarshipApplicationKPIs || {};
+                csvContent += "Scholarship Application Program,Total Applications," + (scholarshipKPIs.TotalApplications || 0) + "\n";
+                csvContent += "Scholarship Application Program,Phone Provision Rate," + ((scholarshipKPIs.PhoneNumberProvisionRate * 100) || 0).toFixed(2) + "%\n";
+                csvContent += "Scholarship Application Program,Average GPA," + (scholarshipKPIs.AverageGPA || 0).toFixed(2) + "\n";
+                csvContent += "Top 10 Intended Majors,,\n";
+                if (scholarshipKPIs.IntendedMajorDistribution) {
+                    for (let [key, value] of Object.entries(scholarshipKPIs.IntendedMajorDistribution)) {
+                        csvContent += `Top 10 Intended Majors,"${key}",${value}\n`;
+                    }
+                }
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "dashboard_metrics.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                console.log("CSV export completed.");
+                toggleDropdown();
+            } catch (error) {
+                console.error("Error exporting to CSV:", error);
+                alert("Failed to export CSV: " + error.message);
+                toggleDropdown();
+            }
+        }
+
+        function exportToPDF() {
+            console.log("Exporting to PDF...");
+            try {
+                if (!window.jspdf || !window.jspdf.jsPDF) {
+                    throw new Error("jsPDF library not loaded.");
+                }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.setFontSize(16);
+                doc.text("Dashboard Metrics", 10, 10);
+
+                doc.setFontSize(12);
+                let y = 20;
+
+                // Google Certification Program
+                const googleKPIs = modelData.GoogleCertificationKPIs || {};
+                doc.text("Google Certification Program", 10, y); y += 10;
+                doc.text(`Total Participants: ${googleKPIs.TotalParticipants || 0}`, 10, y); y += 7;
+                doc.text(`Completed Certifications: ${googleKPIs.CompletedCertifications || 0}`, 10, y); y += 7;
+                doc.text(`Completion Rate: ${((googleKPIs.CompletionRate * 100) || 0).toFixed(2)}%`, 10, y); y += 7;
+                doc.text(`Active Learners: ${googleKPIs.ActiveLearners || 0}`, 10, y); y += 7;
+                doc.text("Specialization Distribution", 10, y); y += 7;
+                if (googleKPIs.SpecializationDistribution) {
+                    for (let [key, value] of Object.entries(googleKPIs.SpecializationDistribution)) {
+                        doc.text(`${key}: ${value}`, 15, y); y += 7;
+                    }
+                }
+                doc.text("Location Distribution", 10, y); y += 7;
+                if (googleKPIs.LocationDistribution) {
+                    for (let [key, value] of Object.entries(googleKPIs.LocationDistribution)) {
+                        doc.text(`${key}: ${value}`, 15, y); y += 7;
+                    }
+                }
+                y += 3;
+
+                // Mentoring Program
+                const mentoringKPIs = modelData.MentoringProgramKPIs || {};
+                doc.text("Mentoring Program", 10, y); y += 10;
+                doc.text(`Total Sessions: ${mentoringKPIs.TotalMentoringSessions || 0}`, 10, y); y += 7;
+                doc.text(`Unique Mentees: ${mentoringKPIs.UniqueMentees || 0}`, 10, y); y += 7;
+                doc.text(`Avg Sessions/Mentee: ${(mentoringKPIs.AverageSessionsPerMentee || 0).toFixed(1)}`, 10, y); y += 7;
+                doc.text("Top 10 Mentors:", 10, y); y += 7;
+                if (mentoringKPIs.TopMentors && modelData.GoogleFormsPlatformData) {
+                    mentoringKPIs.TopMentors.forEach(mentor => {
+                        const sessionCount = modelData.GoogleFormsPlatformData.filter(x => x.Mentor === mentor).length;
+                        doc.text(`${mentor}: ${sessionCount}`, 15, y); y += 7;
+                    });
+                }
+                doc.text("Top 10 Contact Method Preferences:", 10, y); y += 7;
+                if (mentoringKPIs.ContactMethodPreference) {
+                    for (let [key, value] of Object.entries(mentoringKPIs.ContactMethodPreference)) {
+                        doc.text(`${key || "Unknown"}: ${value}`, 15, y); y += 7;
+                    }
+                }
+                y += 3;
+
+                // Scholarship Application Program
+                const scholarshipKPIs = modelData.ScholarshipApplicationKPIs || {};
+                doc.text("Scholarship Application Program", 10, y); y += 10;
+                doc.text(`Total Applications: ${scholarshipKPIs.TotalApplications || 0}`, 10, y); y += 7;
+                doc.text(`Phone Provision Rate: ${((scholarshipKPIs.PhoneNumberProvisionRate * 100) || 0).toFixed(2)}%`, 10, y); y += 7;
+                doc.text(`Average GPA: ${(scholarshipKPIs.AverageGPA || 0).toFixed(2)}`, 10, y); y += 7;
+                doc.text("Top 10 Intended Majors:", 10, y); y += 7;
+                if (scholarshipKPIs.IntendedMajorDistribution) {
+                    for (let [key, value] of Object.entries(scholarshipKPIs.IntendedMajorDistribution)) {
+                        doc.text(`${key}: ${value}`, 15, y); y += 7;
+                    }
+                }
+
+                doc.save("dashboard_metrics.pdf");
+                console.log("PDF export completed.");
+                toggleDropdown();
+            } catch (error) {
+                console.error("Error exporting to PDF:", error);
+                alert("Failed to export PDF: " + error.message);
+                toggleDropdown();
+            }
+        }
+    </script>
+}
