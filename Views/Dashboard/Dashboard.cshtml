@@ -145,6 +145,24 @@
         .dropdown-item:hover {
             background-color: #f1f1f1;
         }
+
+    /* Styles for Google Forms table columns */
+    .method-contact-column {
+        width: 15%;
+    }
+
+    .comment-column-header {
+        width: 10%;
+    }
+
+    .comment-toggle {
+        cursor: pointer;
+        color: #007bff;
+        font-size: 0.9rem;
+        margin-right: 5px;
+        user-select: none;
+        display: inline-block;
+    }
 </style>
 
 <div class="container-fluid">
@@ -219,13 +237,24 @@
                             }
                         </ul>
 
-                        <h5 class="mt-3">Location Distribution</h5>
+                        <h5 class="mt-3">Location City Distribution</h5>
                         <ul class="list-group">
-                            @foreach (var kvp in Model.GoogleCertificationKPIs.LocationDistribution.OrderByDescending(pair => pair.Value))
+                            @foreach (var report in Model.CourseraPivotLocationCityReports.OrderByDescending(r => r.CurrentMembers))
                             {
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    @kvp.Key
-                                    <span class="badge bg-primary rounded-pill">@kvp.Value</span>
+                                    @(report.LocationCity ?? "Unknown")
+                                    <span class="badge bg-primary rounded-pill">@report.CurrentMembers</span>
+                                </li>
+                            }
+                        </ul>
+
+                        <h5 class="mt-3">Location Country Distribution</h5>
+                        <ul class="list-group">
+                            @foreach (var report in Model.CourseraPivotLocationCountryReports.OrderByDescending(r => r.CurrentMembers))
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @(report.LocationCountry ?? "Unknown")
+                                    <span class="badge bg-primary rounded-pill">@report.CurrentMembers</span>
                                 </li>
                             }
                         </ul>
@@ -606,8 +635,8 @@
                                         <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Mentor" asp-route-sortOrder="@(Model.CurrentSortBy == "Mentor" ? Model.CurrentSortOrder : "asc")">Mentor</a></th>
                                         <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Mentee" asp-route-sortOrder="@(Model.CurrentSortBy == "Mentee" ? Model.CurrentSortOrder : "asc")">Mentee</a></th>
                                         <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Date" asp-route-sortOrder="@(Model.CurrentSortBy == "Date" ? Model.CurrentSortOrder : "asc")">Date</a></th>
-                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="MethodOfContact" asp-route-sortOrder="@(Model.CurrentSortBy == "MethodOfContact" ? Model.CurrentSortOrder : "asc")">Method of Contact</a></th>
-                                        <th><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Comment" asp-route-sortOrder="@(Model.CurrentSortBy == "Comment" ? Model.CurrentSortOrder : "asc")">Comment</a></th>
+                                        <th class="method-contact-column"><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="MethodOfContact" asp-route-sortOrder="@(Model.CurrentSortBy == "MethodOfContact" ? Model.CurrentSortOrder : "asc")">Method of Contact</a></th>
+                                        <th class="comment-column-header"><a asp-action="ViewDataByPlatform" asp-route-platformId="3" asp-route-sortBy="Comment" asp-route-sortOrder="@(Model.CurrentSortBy == "Comment" ? Model.CurrentSortOrder : "asc")">Comment</a></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -618,8 +647,11 @@
                                             <td>@item.Mentor</td>
                                             <td>@item.Mentee</td>
                                             <td>@(item.Date?.ToString("yyyy-MM-dd") ?? "N/A")</td>
-                                            <td>@item.MethodOfContact</td>
-                                            <td>@item.Comment</td>
+                                            <td class="method-contact-column">@item.MethodOfContact</td>
+                                            <td title="@item.Comment" data-full-comment="@item.Comment">
+                                                <span class="comment-toggle" onclick="toggleComment(this)">[+]</span>
+                                                <span class="comment-text"></span>
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>
@@ -699,6 +731,48 @@
             }
         });
 
+        // Initialize comments on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const commentCells = document.querySelectorAll('td[data-full-comment]');
+            commentCells.forEach(cell => {
+                const fullComment = cell.getAttribute('data-full-comment') || '';
+                const commentText = cell.querySelector('.comment-text');
+                // Truncate to 20 characters by default
+                if (fullComment.length > 20) {
+                    commentText.textContent = fullComment.substring(0, 20) + '...';
+                } else {
+                    commentText.textContent = fullComment;
+                    // Hide toggle if comment is too short
+                    cell.querySelector('.comment-toggle').style.display = 'none';
+                }
+            });
+        });
+
+        // Toggle comment expand/collapse
+        function toggleComment(element) {
+            console.log("Toggling comment for element:", element);
+            const commentCell = element.parentElement;
+            const commentText = commentCell.querySelector('.comment-text');
+            const fullComment = commentCell.getAttribute('data-full-comment') || '';
+            const isExpanded = element.textContent === '[−]';
+
+            if (isExpanded) {
+                // Collapse: Show truncated text
+                if (fullComment.length > 20) {
+                    commentText.textContent = fullComment.substring(0, 20) + '...';
+                } else {
+                    commentText.textContent = fullComment;
+                }
+                element.textContent = '[+]';
+                console.log("Collapsed comment:", commentText.textContent);
+            } else {
+                // Expand: Show full text
+                commentText.textContent = fullComment;
+                element.textContent = '[−]';
+                console.log("Expanded comment:", commentText.textContent);
+            }
+        }
+
         function exportToCSV() {
             console.log("Exporting to CSV...");
             try {
@@ -717,11 +791,17 @@
                         csvContent += `Specialization Distribution,"${key}",${value}\n`;
                     }
                 }
-                csvContent += "Location Distribution,,\n";
-                if (googleKPIs.LocationDistribution) {
-                    for (let [key, value] of Object.entries(googleKPIs.LocationDistribution)) {
-                        csvContent += `Location Distribution,"${key}",${value}\n`;
-                    }
+                csvContent += "Location City Distribution,,\n";
+                if (modelData.CourseraPivotLocationCityReports) {
+                    modelData.CourseraPivotLocationCityReports.forEach(report => {
+                        csvContent += `Location City Distribution,"${report.LocationCity || "Unknown"}",${report.CurrentMembers || 0}\n`;
+                    });
+                }
+                csvContent += "Location Country Distribution,,\n";
+                if (modelData.CourseraPivotLocationCountryReports) {
+                    modelData.CourseraPivotLocationCountryReports.forEach(report => {
+                        csvContent += `Location Country Distribution,"${report.LocationCountry || "Unknown"}",${report.CurrentMembers || 0}\n`;
+                    });
                 }
 
                 // Mentoring Program
@@ -799,11 +879,17 @@
                         doc.text(`${key}: ${value}`, 15, y); y += 7;
                     }
                 }
-                doc.text("Location Distribution", 10, y); y += 7;
-                if (googleKPIs.LocationDistribution) {
-                    for (let [key, value] of Object.entries(googleKPIs.LocationDistribution)) {
-                        doc.text(`${key}: ${value}`, 15, y); y += 7;
-                    }
+                doc.text("Location City Distribution", 10, y); y += 7;
+                if (modelData.CourseraPivotLocationCityReports) {
+                    modelData.CourseraPivotLocationCityReports.forEach(report => {
+                        doc.text(`${report.LocationCity || "Unknown"}: ${report.CurrentMembers || 0}`, 15, y); y += 7;
+                    });
+                }
+                doc.text("Location Country Distribution", 10, y); y += 7;
+                if (modelData.CourseraPivotLocationCountryReports) {
+                    modelData.CourseraPivotLocationCountryReports.forEach(report => {
+                        doc.text(`${report.LocationCountry || "Unknown"}: ${report.CurrentMembers || 0}`, 15, y); y += 7;
+                    });
                 }
                 y += 3;
 
