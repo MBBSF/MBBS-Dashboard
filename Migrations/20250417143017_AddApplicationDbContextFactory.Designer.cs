@@ -4,6 +4,7 @@ using MBBS.Dashboard.web.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,13 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MBBS.Dashboard.web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250417143017_AddApplicationDbContextFactory")]
+    partial class AddApplicationDbContextFactory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.4")
+                .HasAnnotation("ProductVersion", "9.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -333,50 +336,6 @@ namespace MBBS.Dashboard.web.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ExcelDataCourseraPivotLocationCityReports");
-                });
-
-            modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataCourseraPivotLocationCountryReport", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("AccountId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("AverageEstimatedLearningHours")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("AverageProgress")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("CurrentLearners")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CurrentMembers")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("DeletedMembers")
-                        .HasColumnType("int");
-
-                    b.Property<string>("LocationCountry")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("TotalCompletedCourses")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TotalEnrollments")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("TotalEstimatedLearningHours")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ExcelDataCourseraPivotLocationCountryReports");
                 });
 
             modelBuilder.Entity("MBBS.Dashboard.web.Models.ExcelDataCourseraSpecialization", b =>

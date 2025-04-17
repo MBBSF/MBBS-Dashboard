@@ -1,31 +1,36 @@
 using MBBS.Dashboard.web.Controllers;
 using MBBS.Dashboard.web.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register application services
+// ?? Configure logging to console only (removes EventLog provider) ??
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
+// ?? Register application services ??
 builder.Services.AddControllersWithViews();
 
-// Configure session services
+// ?? Configure session services ??
 builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
 
-// Configure database context
+// ?? Configure database context ??
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// Use InMemoryAccountRepository instead of EFAccountRepository
+// ?? Dependency injection ??
 builder.Services.AddScoped<IAccountRepository, EFAccountRepository>();
-builder.Services.AddTransient<IActivityLogRepository, EFActivityLogRepository>(); // abdel EFActivityLogRepository test
+builder.Services.AddTransient<IActivityLogRepository, EFActivityLogRepository>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// ?? HTTP request pipeline ??
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -34,31 +39,26 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
-// Enable session middleware (must be before UseAuthorization)
 app.UseSession();
-
 app.UseAuthorization();
 
-// Set the default landing page to login ---abdel
+// ?? Default route ??
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=LogInPage}/{id?}"
 );
+
+// ?? Apply migrations and seed default admin ??
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<ApplicationDbContext>();
 
-    // Apply any pending migrations.
     context.Database.Migrate();
 
-    // Check if any accounts exist.
     if (!context.Accounts.Any())
     {
-        // Create a default admin account.
         var accountRepository = services.GetRequiredService<IAccountRepository>();
 
         var defaultAdmin = new Account
@@ -66,8 +66,7 @@ using (var scope = app.Services.CreateScope())
             LegalName = "Default Admin",
             Username = "admin",
             Email = "admin@example.com",
-            // You must hash the password; for demonstration, we'll use a plaintext password then hash it.
-            Password = "Admin@123", // Replace with a secure default
+            Password = "Admin@123",
             UserRole = "Admin",
             IsActive = true
         };
@@ -76,4 +75,5 @@ using (var scope = app.Services.CreateScope())
         context.SaveChanges();
     }
 }
+
 app.Run();
