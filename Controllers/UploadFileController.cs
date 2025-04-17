@@ -19,7 +19,7 @@ using MBBS.Dashboard.web.Controllers;
 public class UploadFileController : Controller
 {
     private readonly ApplicationDbContext _context;
-    private readonly ILogger<UploadFileController> _logger;
+    private readonly ILogger _logger;
 
     public UploadFileController(ApplicationDbContext context, ILogger<UploadFileController> logger)
     {
@@ -74,7 +74,7 @@ public class UploadFileController : Controller
                 "Job Title", "Job Type", "Location City", "Location Region", "Location Country"
             }
         },
-        { "Coursera-pivot-location-city-report", new List<string>
+        { "Coursera-pivot-location-report", new List<string>
             {
                 "Location City", "Current Members", "Current Learners", "Total Enrollments", "Total Completed Courses",
                 "Average Progress", "Total Estimated Learning Hours", "Average Estimated Learning Hours", "Deleted Members"
@@ -116,12 +116,13 @@ public class UploadFileController : Controller
         {
             if (fileType == "membership-report")
                 headerKey = "Coursera-membership-report";
-            else if (fileType == "pivot-location-city-report")
-                headerKey = "Coursera-pivot-location-city-report";
+            else if (fileType == "pivot-location-city-report" || fileType == "pivot-location-country-report" || fileType == "location-country-report")
+                headerKey = "Coursera-pivot-location-report"; // Merged both city and country reports
             else if (fileType == "usage-report")
                 headerKey = "Coursera-usage-report";
         }
 
+        List<string> rawFileHeaders = null;
         List<string> fileHeaders = null;
 
         if (fileExtension == ".csv")
@@ -129,14 +130,19 @@ public class UploadFileController : Controller
             using var streamReader = new StreamReader(file.OpenReadStream());
             using var csv = new CsvReader(streamReader, new CsvConfiguration(CultureInfo.InvariantCulture)
             {
-                HasHeaderRecord = true
+                HasHeaderRecord = true,
+                TrimOptions = TrimOptions.Trim
             });
             await csv.ReadAsync();
             csv.ReadHeader();
-            fileHeaders = csv.HeaderRecord?.Select(NormalizeHeader).ToList();
+            rawFileHeaders = csv.HeaderRecord?.Select(h => h?.Trim() ?? "").ToList();
+            _logger.LogInformation("CSV headers with quotes preserved: {Headers}", string.Join(", ", rawFileHeaders));
+            rawFileHeaders = rawFileHeaders?.Select(h => h.Trim('"')).ToList();
+            fileHeaders = rawFileHeaders?.Select(NormalizeHeader).ToList();
             while (fileHeaders != null && fileHeaders.Count > 0 && string.IsNullOrEmpty(fileHeaders.Last()))
             {
                 fileHeaders.RemoveAt(fileHeaders.Count - 1);
+                rawFileHeaders.RemoveAt(rawFileHeaders.Count - 1);
             }
         }
         else if (fileExtension == ".xlsx")
@@ -147,19 +153,52 @@ public class UploadFileController : Controller
             using var package = new ExcelPackage(stream);
             var worksheet = package.Workbook.Worksheets[0];
             int colCount = worksheet.Dimension?.Columns ?? 0;
+            rawFileHeaders = new List<string>();
             fileHeaders = new List<string>();
             for (int col = 1; col <= colCount; col++)
             {
-                fileHeaders.Add(NormalizeHeader(worksheet.Cells[1, col].Text));
+                var rawHeader = worksheet.Cells[1, col].Text?.Trim() ?? "";
+                rawFileHeaders.Add(rawHeader);
+                fileHeaders.Add(NormalizeHeader(rawHeader));
             }
             while (fileHeaders.Count > 0 && string.IsNullOrEmpty(fileHeaders.Last()))
             {
                 fileHeaders.RemoveAt(fileHeaders.Count - 1);
+                rawFileHeaders.RemoveAt(rawFileHeaders.Count - 1);
             }
         }
 
-        if (fileHeaders == null)
+        if (fileHeaders == null || !fileHeaders.Any())
+        {
+            _logger.LogError("File headers could not be read for {source} with fileType {fileType}.", source, fileType);
             return (false, headerKey);
+        }
+        _logger.LogInformation("Raw file headers (after quote stripping): {RawHeaders}", string.Join(", ", rawFileHeaders));
+        _logger.LogInformation("Normalized file headers: {Headers}", string.Join(", ", fileHeaders));
+
+        _logger.LogInformation("Validating headers for source: {Source}, fileType: {FileType}, headers: {Headers}", source, fileType, string.Join(", ", fileHeaders));
+
+        if (headerKey == "Coursera-pivot-location-report")
+        {
+            var possibleFirstColumns = new[] { "LocationCity", "LocationCountry" };
+            var fileFirstColumn = fileHeaders.FirstOrDefault();
+
+            if (!possibleFirstColumns.Contains(fileFirstColumn, StringComparer.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Header validation failed for Coursera pivot-location-report. Expected first column to be LocationCity or LocationCountry, Actual: {ActualFirstColumn}",
+                    fileFirstColumn);
+                return (false, headerKey);
+            }
+
+            if (ExpectedHeaders[headerKey].Select(NormalizeHeader).ToList().Skip(1).All(h => fileHeaders.Skip(1).Contains(h, StringComparer.OrdinalIgnoreCase)))
+            {
+                _logger.LogInformation("Header validation passed for Coursera-pivot-location-report.");
+                return (true, headerKey);
+            }
+            _logger.LogWarning("Header validation failed for Coursera pivot-location-report. Expected: {Expected}, Actual: {Actual}",
+                string.Join(", ", ExpectedHeaders[headerKey].Select(NormalizeHeader).ToList()), string.Join(", ", fileHeaders));
+            return (false, headerKey);
+        }
 
         if (source == "Cognito")
         {
@@ -177,14 +216,26 @@ public class UploadFileController : Controller
                 headerKey = "Cognito";
                 return (true, headerKey);
             }
+            _logger.LogWarning("Cognito header validation failed. Expected Table: {TableHeaders}, Form: {FormHeaders}, Actual: {Actual}",
+                string.Join(", ", tableHeaders), string.Join(", ", formHeaders), string.Join(", ", fileHeaders));
             return (false, headerKey);
         }
 
         if (!ExpectedHeaders.ContainsKey(headerKey))
+        {
+            _logger.LogError("Invalid header key: {HeaderKey}", headerKey);
             return (false, headerKey);
+        }
 
         var expectedHeaders = ExpectedHeaders[headerKey].Select(NormalizeHeader).ToList();
-        return (fileHeaders.SequenceEqual(expectedHeaders, StringComparer.OrdinalIgnoreCase), headerKey);
+        var isSubset = expectedHeaders.All(h => fileHeaders.Contains(h, StringComparer.OrdinalIgnoreCase));
+        if (!isSubset)
+        {
+            _logger.LogWarning("Header mismatch for {HeaderKey}. Expected: {Expected}, Actual: {Actual}",
+                headerKey, string.Join(", ", expectedHeaders), string.Join(", ", fileHeaders));
+            return (false, headerKey);
+        }
+        return (true, headerKey);
     }
 
     [HttpGet]
@@ -251,7 +302,8 @@ public class UploadFileController : Controller
                                     duplicateCount = await ProcessCourseraMembershipCsvData(model.File);
                                     break;
                                 case "pivot-location-city-report":
-                                    duplicateCount = await ProcessCourseraPivotLocationCityCsvData(model.File);
+                                case "pivot-location-country-report":
+                                    duplicateCount = await ProcessCourseraPivotLocationCityCsvData(model.File); // Use the same method for both
                                     break;
                                 case "usage-report":
                                     duplicateCount = await ProcessCourseraUsageCsvData(model.File);
@@ -275,7 +327,8 @@ public class UploadFileController : Controller
                                     duplicateCount = await ProcessCourseraMembershipXlsxData(model.File);
                                     break;
                                 case "pivot-location-city-report":
-                                    duplicateCount = await ProcessCourseraPivotLocationCityXlsxData(model.File);
+                                case "pivot-location-country-report":
+                                    duplicateCount = await ProcessCourseraPivotLocationCityXlsxData(model.File); // Use the same method for both
                                     break;
                                 case "usage-report":
                                     duplicateCount = await ProcessCourseraUsageXlsxData(model.File);
