@@ -80,6 +80,11 @@ public class UploadFileController : Controller
                 "Average Progress", "Total Estimated Learning Hours", "Average Estimated Learning Hours", "Deleted Members"
             }
         },
+        { "Coursera-pivot-location-country-report", new List<string>
+            {
+                "Location Country","Current Members","Current Learners","Total Enrollments","Total Completed Courses","Average Progress","Total Estimated Learning Hours","Average Estimated Learning Hours","Deleted Members"
+            }
+        },
         { "Coursera-usage-report", new List<string>
             {
                 "Name", "Email", "External Id", "Course", "Course ID", "Course Slug", "University",
@@ -302,8 +307,10 @@ public class UploadFileController : Controller
                                     duplicateCount = await ProcessCourseraMembershipCsvData(model.File);
                                     break;
                                 case "pivot-location-city-report":
-                                case "pivot-location-country-report":
                                     duplicateCount = await ProcessCourseraPivotLocationCityCsvData(model.File); // Use the same method for both
+                                    break;
+                                case "pivot-location-country-report":
+                                    duplicateCount = await ProcessCourseraPivotLocationCountryCsvData(model.File);
                                     break;
                                 case "usage-report":
                                     duplicateCount = await ProcessCourseraUsageCsvData(model.File);
@@ -327,8 +334,10 @@ public class UploadFileController : Controller
                                     duplicateCount = await ProcessCourseraMembershipXlsxData(model.File);
                                     break;
                                 case "pivot-location-city-report":
-                                case "pivot-location-country-report":
                                     duplicateCount = await ProcessCourseraPivotLocationCityXlsxData(model.File); // Use the same method for both
+                                    break;
+                                case "pivot-location-country-report":
+                                    duplicateCount = await ProcessCourseraPivotLocationCountryCsvData(model.File);
                                     break;
                                 case "usage-report":
                                     duplicateCount = await ProcessCourseraUsageXlsxData(model.File);
@@ -909,6 +918,92 @@ public class UploadFileController : Controller
         return dbDuplicateCount + fileDuplicateCount;
     }
 
+    private async Task<int> ProcessCourseraPivotLocationCountryCsvData(IFormFile file)
+    {
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            HasHeaderRecord = true,
+            HeaderValidated = null,
+            MissingFieldFound = null
+        };
+        using var streamReader = new StreamReader(file.OpenReadStream());
+        using var csv = new CsvReader(streamReader, config);
+        csv.Context.RegisterClassMap<ExcelDataCourseraPivotLocationCountryReportMap>();
+        var dataList = new List<ExcelDataCourseraPivotLocationCountryReport>();
+        var fileKeys = new HashSet<string>();
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+
+        await foreach (var record in csv.GetRecordsAsync<ExcelDataCourseraPivotLocationCountryReport>())
+        {
+            // Optionally, assign the AccountId if required:
+            // record.AccountId = currentAccountId;
+
+            string key = record.LocationCountry?.Trim();
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
+            }
+            bool exists = await _context.ExcelDataCourseraPivotLocationCountryReports.AnyAsync(r =>
+                r.LocationCountry == record.LocationCountry
+            );
+            if (!exists)
+                dataList.Add(record);
+            else
+                dbDuplicateCount++;
+        }
+        _context.ExcelDataCourseraPivotLocationCountryReports.AddRange(dataList);
+        await _context.SaveChangesAsync();
+        return dbDuplicateCount + fileDuplicateCount;
+    }
+
+    private async Task<int> ProcessCourseraPivotLocationCountryXlsxData(IFormFile file)
+    {
+        int dbDuplicateCount = 0, fileDuplicateCount = 0;
+        OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+        int currentAccountId = AccountController.ActiveAccount?.Id ?? 0;
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+        using var package = new ExcelPackage(stream);
+        var worksheet = package.Workbook.Worksheets[0];
+        int rowCount = worksheet.Dimension.Rows;
+        var dataList = new List<ExcelDataCourseraPivotLocationCountryReport>();
+        var fileKeys = new HashSet<string>();
+
+        // Process from row 2 onward (assuming row 1 contains headers)
+        for (int row = 2; row <= rowCount; row++)
+        {
+            var record = new ExcelDataCourseraPivotLocationCountryReport
+            {
+                LocationCountry = worksheet.Cells[row, 1].Text,
+                CurrentMembers = int.TryParse(worksheet.Cells[row, 2].Text, out var currentMembers) ? currentMembers : (int?)null,
+                CurrentLearners = int.TryParse(worksheet.Cells[row, 3].Text, out var currentLearners) ? currentLearners : (int?)null,
+                TotalEnrollments = int.TryParse(worksheet.Cells[row, 4].Text, out var totalEnrollments) ? totalEnrollments : (int?)null,
+                TotalCompletedCourses = int.TryParse(worksheet.Cells[row, 5].Text, out var totalCompleted) ? totalCompleted : (int?)null,
+                AverageProgress = decimal.TryParse(worksheet.Cells[row, 6].Text, out var avgProgress) ? avgProgress : (decimal?)null,
+                TotalEstimatedLearningHours = decimal.TryParse(worksheet.Cells[row, 7].Text, out var totalEstHours) ? totalEstHours : (decimal?)null,
+                AverageEstimatedLearningHours = decimal.TryParse(worksheet.Cells[row, 8].Text, out var avgEstHours) ? avgEstHours : (decimal?)null,
+                DeletedMembers = int.TryParse(worksheet.Cells[row, 9].Text, out var deletedMembers) ? deletedMembers : (int?)null,
+            };
+            string key = record.LocationCountry?.Trim();
+            if (!fileKeys.Add(key))
+            {
+                fileDuplicateCount++;
+                continue;
+            }
+            bool exists = await _context.ExcelDataCourseraPivotLocationCountryReports.AnyAsync(r =>
+                r.LocationCountry == record.LocationCountry
+            );
+            if (!exists)
+                dataList.Add(record);
+            else
+                dbDuplicateCount++;
+        }
+        _context.ExcelDataCourseraPivotLocationCountryReports.AddRange(dataList);
+        await _context.SaveChangesAsync();
+        return dbDuplicateCount + fileDuplicateCount;
+    }
     private async Task<int> ProcessCognitoMasterListCsvData(IFormFile file, string headerKey)
     {
         int dbDuplicateCount = 0, fileDuplicateCount = 0;
