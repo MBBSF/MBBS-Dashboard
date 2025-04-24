@@ -20,8 +20,24 @@ namespace MBBS.Dashboard.web.Controllers
             _context = context;
         }
 
+        // Helper method to check if user is logged in
+        private IActionResult RequireLogin()
+        {
+            if (AccountController.ActiveAccount == null)
+            {
+                return RedirectToAction("LogInPage", "Account");
+            }
+            return null;
+        }
+
         public async Task<IActionResult> Index()
         {
+            var loginCheck = RequireLogin();
+            if (loginCheck != null)
+            {
+                return loginCheck;
+            }
+
             var viewModel = await GetDashboardViewModel();
             return View("Dashboard", viewModel);
         }
@@ -29,12 +45,24 @@ namespace MBBS.Dashboard.web.Controllers
         [HttpPost]
         public IActionResult ApplyFilter(string filterCriteria)
         {
+            var loginCheck = RequireLogin();
+            if (loginCheck != null)
+            {
+                return loginCheck;
+            }
+
             TempData["FilterCriteria"] = filterCriteria;
             return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> ViewDataByPlatform(int platformId, string reportType = "specialization", string sortBy = null, string sortOrder = null, string searchQuery = null)
         {
+            var loginCheck = RequireLogin();
+            if (loginCheck != null)
+            {
+                return loginCheck;
+            }
+
             var viewModel = await GetDashboardViewModel();
             viewModel.PlatformId = platformId;
             viewModel.SearchQuery = searchQuery;
@@ -180,12 +208,24 @@ namespace MBBS.Dashboard.web.Controllers
 
         public async Task<IActionResult> CourseraReports(int platformId = 1, string reportType = "specialization")
         {
+            var loginCheck = RequireLogin();
+            if (loginCheck != null)
+            {
+                return loginCheck;
+            }
+
             return await ViewDataByPlatform(platformId, reportType);
         }
 
         [HttpPost]
         public async Task<IActionResult> DeleteCourseraRecords(int platformId, string reportType, int[] ids)
         {
+            var loginCheck = RequireLogin();
+            if (loginCheck != null)
+            {
+                return loginCheck;
+            }
+
             if (ids == null || ids.Length == 0)
             {
                 TempData["Error"] = "No records selected for deletion.";
@@ -250,6 +290,12 @@ namespace MBBS.Dashboard.web.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteCognitoRecords(int platformId, int[] ids)
         {
+            var loginCheck = RequireLogin();
+            if (loginCheck != null)
+            {
+                return loginCheck;
+            }
+
             if (ids == null || ids.Length == 0)
             {
                 TempData["Error"] = "No records selected for deletion.";
@@ -276,6 +322,12 @@ namespace MBBS.Dashboard.web.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteGoogleFormsRecords(int platformId, int[] ids)
         {
+            var loginCheck = RequireLogin();
+            if (loginCheck != null)
+            {
+                return loginCheck;
+            }
+
             if (ids == null || ids.Length == 0)
             {
                 TempData["Error"] = "No records selected for deletion.";

@@ -18,20 +18,93 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/MBBS.Dashboard.web.styles.css" asp-append-version="true" />
+    <style>
+        .navbar-nav {
+            width: 100%;
+        }
+
+            .navbar-nav .nav-item {
+                margin: 5px 0;
+            }
+
+            .navbar-nav .nav-link {
+                padding: 10px 15px;
+                font-size: 1.1rem;
+                text-align: left;
+                width: 100%;
+                transition: background-color 0.2s;
+            }
+
+                .navbar-nav .nav-link:hover {
+                    background-color: rgba(255, 255, 255, 0.1);
+                    border-radius: 5px;
+                }
+
+        .navbar-collapse {
+            background-color: #343a40; /* Match navbar background */
+            padding: 10px;
+            border-radius: 0 0 5px 5px;
+        }
+
+            .navbar-collapse.show {
+                display: block; /* Ensure collapsed menu is visible when toggled */
+            }
+
+        .navbar-logo {
+            max-height: 40px;
+            margin-right: 10px;
+        }
+
+        @@media (max-width: 576px) {
+            .navbar-brand
+
+        {
+            font-size: 1.2rem;
+        }
+
+        .navbar-logo {
+            max-height: 30px;
+        }
+
+        .navbar-nav {
+            padding-bottom: 10px;
+        }
+
+        .container-fluid {
+            padding: 0 15px;
+        }
+
+        .navbar-collapse {
+            max-height: 80vh; /* Prevent overflow on small screens */
+            overflow-y: auto;
+        }
+
+        }
+
+        @@media (min-width: 576px) {
+            .navbar-collapse
+
+        {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark custom-navbar-color border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-dark custom-navbar-color border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand dashboard-title" asp-area="" asp-controller="Home" asp-action="Index" style="color: white; text-shadow: 1px 1px 1px #000000;">
                     <img src="~/images/mbbsf-logo.png" alt="MBBSF Logo" class="navbar-logo">
                     M.B.B.S.F Metrics Dashboard
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
                         aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav flex-grow-1">
                         <!-- Always show Home -->
                         <li class="nav-item">
@@ -59,9 +132,6 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link text-white" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white" asp-area="" asp-controller="Contact" asp-action="Contact">Contact Us</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link text-white" asp-area="" asp-controller="Faq" asp-action="Faq">FAQ</a>
@@ -93,12 +163,24 @@
     </div>
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2024 - Marie Barney Boston Scholarship Foundation
+            © 2024 - Marie Barney Boston Scholarship Foundation
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggler = document.querySelector('.navbar-toggler');
+            const collapse = document.querySelector('#navbarSupportedContent');
+
+            if (toggler && collapse) {
+                toggler.addEventListener('click', function () {
+                    collapse.classList.toggle('show');
+                });
+            }
+        });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
