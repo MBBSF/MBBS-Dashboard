@@ -4,8 +4,9 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<!-- Include jsPDF -->
+<!-- Include jsPDF with fallback -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>window.jspdf || document.write('<script src="/lib/jspdf.umd.min.js"><\/script>');</script>
 
 <!-- Custom CSS -->
 <style>
@@ -95,7 +96,6 @@
         gap: 0.5rem;
     }
 
-    /* Custom Dropdown Styles */
     .custom-dropdown {
         position: relative;
         display: inline-block;
@@ -146,7 +146,6 @@
             background-color: #f1f1f1;
         }
 
-    /* Styles for Google Forms table columns */
     .method-contact-column {
         width: 15%;
     }
@@ -166,6 +165,11 @@
 </style>
 
 <div class="container-fluid">
+    <!-- Mobile View Message -->
+    <div class="alert alert-info d-block d-md-none" role="alert">
+        This dashboard is optimized for larger screens. Please use a desktop or tablet for the best experience.
+    </div>
+
     <h2 class="mb-4">Dashboard</h2>
 
     @if (Model == null)
@@ -664,8 +668,8 @@
 
         <!-- Activity Logs Section -->
         <div class="mt-4">
-            <h3 class="mb-3">Activity Logs</h3>
-            @if (Model.ActivityLogs != null && Model.ActivityLogs.Any())
+            <h3 class="mb-3">Recent Activity Logs</h3>
+            @if (Model.ActivityLogs?.Any() == true)
             {
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
@@ -673,14 +677,18 @@
                             <tr>
                                 <th>Timestamp</th>
                                 <th>Action</th>
+                                <th>User</th>
+                                <th>Details</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var log in Model.ActivityLogs)
+                            @foreach (var log in Model.ActivityLogs.OrderByDescending(l => l.Timestamp).Take(5))
                             {
                                 <tr>
                                     <td>@log.Timestamp.ToString("g")</td>
                                     <td>@log.Action</td>
+                                    <td>@log.UserName</td>
+                                    <td>@log.Details</td>
                                 </tr>
                             }
                         </tbody>
@@ -690,7 +698,7 @@
             else
             {
                 <div class="alert alert-info" role="alert">
-                    No activity logs found.
+                    No recent activity logs found.
                 </div>
             }
         </div>
