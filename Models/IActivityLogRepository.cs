@@ -6,7 +6,7 @@ namespace MBBS.Dashboard.web.Models
     public interface IActivityLogRepository
     {
         void AddLog(ActivityLog log);
-        IEnumerable<ActivityLog> GetLogsForAccount(int accountId);
-        Task<List<ActivityLog>> GetRecentActivityLogsAsync(int v);
+        IEnumerable<ActivityLogViewModel> GetLogsForAccount(int accountId);
+        Task<List<ActivityLogViewModel>> GetRecentActivityLogsAsync(int count, int? accountId = null);
     }
 }

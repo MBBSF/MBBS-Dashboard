@@ -15,9 +15,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - M.B.B.S.F Metrics Dashboard</title>
+    <!-- In the <head> section -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/MBBS.Dashboard.web.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/MBBS.Dashboard.web.styles.css" asp-append-version="true" />
     <style>
         .navbar-nav {
             width: 100%;
@@ -91,13 +92,28 @@
 
         }
     </style>
+    <!-- Include Chart.js (UMD build) and jsPDF at the top -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+        if (typeof Chart === 'undefined') {
+            console.log("Chart.js CDN failed to load, attempting to load local copy...");
+            document.write('<script src="/lib/chart.js/chart.umd.min.js"><\/script>');
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        if (!window.jspdf) {
+            console.log("jsPDF CDN failed to load, attempting to load local copy...");
+            document.write('<script src="/lib/jspdf/jspdf.umd.min.js"><\/script>');
+        }
+    </script>
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-dark custom-navbar-color border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand dashboard-title" asp-area="" asp-controller="Home" asp-action="Index" style="color: white; text-shadow: 1px 1px 1px #000000;">
-                    <img src="~/images/mbbsf-logo.png" alt="MBBSF Logo" class="navbar-logo">
+                    <img src="/images/mbbsf-logo.png" alt="MBBSF Logo" class="navbar-logo">
                     M.B.B.S.F Metrics Dashboard
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
@@ -166,9 +182,8 @@
             © 2024 - Marie Barney Boston Scholarship Foundation
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    <script src="/js/site.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const toggler = document.querySelector('.navbar-toggler');

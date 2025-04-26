@@ -450,18 +450,39 @@ namespace MBBS.Dashboard.web.Controllers
             {
                 TotalMentoringSessions = googleFormsData.Count,
                 ContactMethodDistribution = googleFormsData.GroupBy(x => x.MethodOfContact ?? "Unknown")
-                    .ToDictionary(g => g.Key, g => g.Count()),
-                TopMentors = googleFormsData.GroupBy(x => x.Mentor)
-                    .OrderByDescending(g => g.Count()).Take(5).Select(g => g.Key).ToList(),
+        .ToDictionary(g => g.Key, g => g.Count()),
+                TopMentorsWithCounts = googleFormsData
+        .GroupBy(x => (x.Mentor ?? "Unknown").Trim().ToLowerInvariant())
+        .Select(g => new
+        {
+            Mentor = googleFormsData
+                .Where(x => (x.Mentor ?? "Unknown").Trim().ToLowerInvariant() == g.Key)
+                .Select(x => x.Mentor ?? "Unknown")
+                .First(),
+            Count = g.Count()
+        })
+        .OrderByDescending(x => x.Count)
+        .Take(5)
+        .Select(x => (x.Mentor, x.Count))
+        .ToList(),
+                TopMentors = googleFormsData
+        .GroupBy(x => (x.Mentor ?? "Unknown").Trim().ToLowerInvariant())
+        .OrderByDescending(g => g.Count())
+        .Take(5)
+        .Select(g => googleFormsData
+            .Where(x => (x.Mentor ?? "Unknown").Trim().ToLowerInvariant() == g.Key)
+            .Select(x => x.Mentor ?? "Unknown")
+            .First())
+        .ToList(),
                 UniqueMentees = googleFormsData.Select(x => x.Mentee).Distinct().Count(),
                 AverageSessionsPerMentee = googleFormsData.Select(x => x.Mentee).Distinct().Count() > 0 ?
-                    (double)googleFormsData.Count / googleFormsData.Select(x => x.Mentee).Distinct().Count() : 0,
+        (double)googleFormsData.Count / googleFormsData.Select(x => x.Mentee).Distinct().Count() : 0,
                 ContactMethodPreference = googleFormsData
-                    .GroupBy(x => x.MethodOfContact ?? "Unknown")
-                    .Select(g => new { Method = g.Key, Count = g.Count() })
-                    .OrderByDescending(x => x.Count)
-                    .Take(10)
-                    .ToDictionary(x => x.Method, x => x.Count)
+        .GroupBy(x => x.MethodOfContact ?? "Unknown")
+        .Select(g => new { Method = g.Key, Count = g.Count() })
+        .OrderByDescending(x => x.Count)
+        .Take(10)
+        .ToDictionary(x => x.Method, x => x.Count)
             };
 
             var scholarshipKPIs = new ScholarshipApplicationKPIsViewModel
@@ -480,6 +501,8 @@ namespace MBBS.Dashboard.web.Controllers
                 AverageGPA = (double)cognitoData.Where(x => x.HighSchoolCollegeData_CumulativeGPA.HasValue)
                     .Select(x => x.HighSchoolCollegeData_CumulativeGPA.Value).DefaultIfEmpty(0).Average()
             };
+            // Fetch the accounts to map AccountId to UserName
+            var accounts = await _context.Accounts.ToListAsync(); // Load accounts into memory for mapping
 
             var viewModel = new DashboardViewModel
             {
@@ -563,7 +586,9 @@ namespace MBBS.Dashboard.web.Controllers
                 ActivityLogs = activityLogs.Select(x => new ActivityLogViewModel
                 {
                     Action = x.Action,
-                    Timestamp = x.Timestamp
+                    Timestamp = x.Timestamp,
+                    UserName = accounts.FirstOrDefault(acc => acc.Id == x.AccountId)?.Username ?? "Unknown User",
+                    Details = x.Details ?? "No details available"
                 }).ToList()
             };
 

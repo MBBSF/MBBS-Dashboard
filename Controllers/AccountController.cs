@@ -83,7 +83,8 @@ namespace MBBS.Dashboard.web.Controllers
                 {
                     AccountId = ActiveAccount.Id,
                     Action = "Password Changed",
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.UtcNow,
+                    Details = $"User {ActiveAccount.Username} changed their password"
                 });
                 return View("PasswordChangeSuccessful");
             }
@@ -134,7 +135,8 @@ namespace MBBS.Dashboard.web.Controllers
                 {
                     AccountId = ActiveAccount.Id,
                     Action = "Account Details Updated",
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.UtcNow,
+                    Details = $"User {ActiveAccount.Username} updated their account details"
                 });
                 TempData["SuccessMessage"] = "Account updated successfully!";
                 return RedirectToAction("AccountDetails");
@@ -202,7 +204,8 @@ namespace MBBS.Dashboard.web.Controllers
             {
                 AccountId = acc.Id,
                 Action = "Account Created",
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow,
+                Details = $"Admin created new account for user {acc.Username}"
             });
 
             return RedirectToAction("AccountList");
@@ -239,7 +242,8 @@ namespace MBBS.Dashboard.web.Controllers
                 {
                     AccountId = acc.Id,
                     Action = "Account Edited by Admin",
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.UtcNow,
+                    Details = $"Admin edited account for user {acc.Username}"
                 });
                 return RedirectToAction("AccountList");
             }
@@ -284,7 +288,8 @@ namespace MBBS.Dashboard.web.Controllers
             {
                 AccountId = account.Id,
                 Action = isActive ? "Account Activated" : "Account Deactivated",
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow,
+                Details = $"Admin set account status for user {account.Username} to {(isActive ? "active" : "inactive")}"
             });
 
             return RedirectToAction("AccountList");
@@ -295,10 +300,8 @@ namespace MBBS.Dashboard.web.Controllers
         // --------------------------
         public IActionResult SignIn(Account attempt)
         {
-            // Authenticate using plain-text comparisons.
             Account acc = _accountRepository.AuthenticateUser(attempt.Username, attempt.Password);
 
-            // Check for valid credentials and that the account is active.
             if (acc == null)
             {
                 ViewBag.ErrorMessage = "Invalid login credentials.";
@@ -310,15 +313,17 @@ namespace MBBS.Dashboard.web.Controllers
                 return View("LogInPage");
             }
             ActiveAccount = acc;
-            // Log the sign-in action
             _activityLogRepository.AddLog(new ActivityLog
             {
                 AccountId = acc.Id,
                 Action = "Signed In",
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow,
+                Details = $"User {acc.Username} signed in successfully"
             });
             return RedirectToAction("Index", "Home");
         }
+
+
 
         public IActionResult LogOut()
         {
@@ -329,7 +334,8 @@ namespace MBBS.Dashboard.web.Controllers
                 {
                     AccountId = ActiveAccount.Id,
                     Action = "Logged Out",
-                    Timestamp = DateTime.UtcNow
+                    Timestamp = DateTime.UtcNow,
+                    Details = $"User {ActiveAccount.Username} logged out"
                 });
             }
             ActiveAccount = null;
@@ -348,5 +354,6 @@ namespace MBBS.Dashboard.web.Controllers
         public int AccountId { get; set; }
         public string Action { get; set; }
         public DateTime Timestamp { get; set; }
+        public string Details { get; set; } // Add this property
     }
 }

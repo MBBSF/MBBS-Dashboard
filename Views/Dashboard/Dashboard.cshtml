@@ -4,6 +4,8 @@
     ViewData["Title"] = "Dashboard";
 }
 
+
+
 <!-- Include jsPDF with fallback -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>window.jspdf || document.write('<script src="/lib/jspdf.umd.min.js"><\/script>');</script>
@@ -162,6 +164,26 @@
         user-select: none;
         display: inline-block;
     }
+
+    .chart-container {
+        position: relative;
+        margin-top: 20px;
+        width: 100%;
+        max-width: 250px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    canvas {
+        max-width: 100%;
+    }
+
+    .chart-error {
+        color: red;
+        font-size: 0.9rem;
+        text-align: center;
+        margin-top: 10px;
+    }
 </style>
 
 <div class="container-fluid">
@@ -229,7 +251,10 @@
                             <li class="list-group-item"><strong>Completion Rate:</strong> @string.Format("{0:P2}", Model.GoogleCertificationKPIs.CompletionRate)</li>
                             <li class="list-group-item"><strong>Active Learners:</strong> @Model.GoogleCertificationKPIs.ActiveLearners</li>
                         </ul>
-
+                        <div class="chart-container">
+                            <canvas id="googleCertificationChart" height="150"></canvas>
+                            <div id="googleChartError" class="chart-error"></div>
+                        </div>
                         <h5 class="mt-3">Specialization Distribution</h5>
                         <ul class="list-group">
                             @foreach (var kvp in Model.GoogleCertificationKPIs.SpecializationDistribution.OrderByDescending(pair => pair.Value))
@@ -240,7 +265,6 @@
                                 </li>
                             }
                         </ul>
-
                         <h5 class="mt-3">Location City Distribution</h5>
                         <ul class="list-group">
                             @foreach (var report in Model.CourseraPivotLocationCityReports.OrderByDescending(r => r.CurrentMembers))
@@ -251,7 +275,6 @@
                                 </li>
                             }
                         </ul>
-
                         <h5 class="mt-3">Location Country Distribution</h5>
                         <ul class="list-group">
                             @foreach (var report in Model.CourseraPivotLocationCountryReports.OrderByDescending(r => r.CurrentMembers))
@@ -278,19 +301,20 @@
                             <li class="list-group-item"><strong>Unique Mentees:</strong> @Model.MentoringProgramKPIs.UniqueMentees</li>
                             <li class="list-group-item"><strong>Avg Sessions/Mentee:</strong> @string.Format("{0:F1}", Model.MentoringProgramKPIs.AverageSessionsPerMentee)</li>
                         </ul>
-
+                        <div class="chart-container">
+                            <canvas id="mentoringProgramChart" height="150"></canvas>
+                            <div id="mentoringChartError" class="chart-error"></div>
+                        </div>
                         <h5 class="mt-3">Top Mentors</h5>
                         <ul class="list-group">
-                            @foreach (var mentor in Model.MentoringProgramKPIs.TopMentors)
+                            @foreach (var mentor in Model.MentoringProgramKPIs.TopMentorsWithCounts)
                             {
-                                var sessionCount = Model.GoogleFormsPlatformData.Count(x => x.Mentor == mentor);
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    @mentor
-                                    <span class="badge bg-success rounded-pill">@sessionCount</span>
+                                    @mentor.Mentor
+                                    <span class="badge bg-success rounded-pill">@mentor.Count</span>
                                 </li>
                             }
                         </ul>
-
                         <h5 class="mt-3">Top Contact Method Preferences</h5>
                         <ul class="list-group">
                             @foreach (var kvp in Model.MentoringProgramKPIs.ContactMethodPreference.OrderByDescending(pair => pair.Value))
@@ -317,7 +341,10 @@
                             <li class="list-group-item"><strong>Phone Provision Rate:</strong> @string.Format("{0:P2}", Model.ScholarshipApplicationKPIs.PhoneNumberProvisionRate)</li>
                             <li class="list-group-item"><strong>Average GPA:</strong> @string.Format("{0:F2}", Model.ScholarshipApplicationKPIs.AverageGPA)</li>
                         </ul>
-
+                        <div class="chart-container">
+                            <canvas id="scholarshipProgramChart" height="150"></canvas>
+                            <div id="scholarshipChartError" class="chart-error"></div>
+                        </div>
                         <h5 class="mt-3">Top Intended Majors</h5>
                         <ul class="list-group">
                             @foreach (var kvp in Model.ScholarshipApplicationKPIs.IntendedMajorDistribution.OrderByDescending(pair => pair.Value))
@@ -677,7 +704,6 @@
                             <tr>
                                 <th>Timestamp</th>
                                 <th>Action</th>
-                                <th>User</th>
                                 <th>Details</th>
                             </tr>
                         </thead>
@@ -687,7 +713,6 @@
                                 <tr>
                                     <td>@log.Timestamp.ToString("g")</td>
                                     <td>@log.Action</td>
-                                    <td>@log.UserName</td>
                                     <td>@log.Details</td>
                                 </tr>
                             }
@@ -707,15 +732,20 @@
 
 @section Scripts {
     <script>
+        // Verify Chart.js is loaded (after potential fallback)
+        window.addEventListener('load', function() {
+            console.log("Chart.js loaded:", typeof Chart !== 'undefined' ? "Yes" : "No");
+        });
+
         // Pass model data to JavaScript with PascalCase naming
         const modelData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }));
 
         // Detailed logging to inspect the data
         console.log("Full Model Data:", modelData);
-        console.log("GoogleCertificationKPIs:", modelData.GoogleCertificationKPIs);
-        console.log("MentoringProgramKPIs:", modelData.MentoringProgramKPIs);
-        console.log("ScholarshipApplicationKPIs:", modelData.ScholarshipApplicationKPIs);
-        console.log("GoogleFormsPlatformData:", modelData.GoogleFormsPlatformData);
+        console.log("GoogleCertificationKPIs:", modelData?.GoogleCertificationKPIs);
+        console.log("MentoringProgramKPIs:", modelData?.MentoringProgramKPIs);
+        console.log("ScholarshipApplicationKPIs:", modelData?.ScholarshipApplicationKPIs);
+        console.log("GoogleFormsPlatformData:", modelData?.GoogleFormsPlatformData);
 
         function toggleCheckboxes(source, className) {
             const checkboxes = document.getElementsByClassName(className);
@@ -739,21 +769,219 @@
             }
         });
 
-        // Initialize comments on page load
+        // Initialize comments and charts on page load
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM fully loaded and parsed");
+
+            // Initialize comments
             const commentCells = document.querySelectorAll('td[data-full-comment]');
             commentCells.forEach(cell => {
                 const fullComment = cell.getAttribute('data-full-comment') || '';
                 const commentText = cell.querySelector('.comment-text');
-                // Truncate to 20 characters by default
                 if (fullComment.length > 20) {
                     commentText.textContent = fullComment.substring(0, 20) + '...';
                 } else {
                     commentText.textContent = fullComment;
-                    // Hide toggle if comment is too short
                     cell.querySelector('.comment-toggle').style.display = 'none';
                 }
             });
+
+            // Initialize Charts
+            try {
+                if (!window.Chart) {
+                    throw new Error("Chart.js is not loaded");
+                }
+
+                if (!modelData) {
+                    throw new Error("Model data is not available");
+                }
+
+                // Google Certification Program Chart
+                const googleCtx = document.getElementById('googleCertificationChart')?.getContext('2d');
+                if (!googleCtx) {
+                    throw new Error("Google Certification Chart canvas not found");
+                }
+                console.log("Google Certification Data:", {
+                    totalParticipants: modelData.GoogleCertificationKPIs?.TotalParticipants || 0,
+                    completedCertifications: modelData.GoogleCertificationKPIs?.CompletedCertifications || 0,
+                    activeLearners: modelData.GoogleCertificationKPIs?.ActiveLearners || 0
+                });
+                new Chart(googleCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Total Participants', 'Completed Certifications', 'Active Learners'],
+                        datasets: [{
+                            label: 'Google Certification Metrics',
+                            data: [
+                                modelData.GoogleCertificationKPIs?.TotalParticipants || 0,
+                                modelData.GoogleCertificationKPIs?.CompletedCertifications || 0,
+                                modelData.GoogleCertificationKPIs?.ActiveLearners || 0
+                            ],
+                            backgroundColor: ['#007bff', '#4dabf7', '#a3daff'],
+                            borderColor: ['#0056b3', '#2b8ad6', '#7bb8e6'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Key Metrics'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        return label + context.parsed;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                console.log("Google Certification Chart initialized");
+
+                // Mentoring Program Chart
+                const mentoringCtx = document.getElementById('mentoringProgramChart')?.getContext('2d');
+                if (!mentoringCtx) {
+                    throw new Error("Mentoring Program Chart canvas not found");
+                }
+                console.log("Mentoring Program Data:", {
+                    totalSessions: modelData.MentoringProgramKPIs?.TotalMentoringSessions || 0,
+                    uniqueMentees: modelData.MentoringProgramKPIs?.UniqueMentees || 0,
+                    avgSessionsPerMentee: modelData.MentoringProgramKPIs?.AverageSessionsPerMentee || 0
+                });
+                new Chart(mentoringCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Total Sessions', 'Unique Mentees', 'Avg Sessions/Mentee'],
+                        datasets: [{
+                            label: 'Mentoring Program Metrics',
+                            data: [
+                                modelData.MentoringProgramKPIs?.TotalMentoringSessions || 0,
+                                modelData.MentoringProgramKPIs?.UniqueMentees || 0,
+                                modelData.MentoringProgramKPIs?.AverageSessionsPerMentee || 0
+                            ],
+                            backgroundColor: ['#28a745', '#51cf66', '#96e6a1'],
+                            borderColor: ['#1e7e34', '#3da856', '#6fc07a'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Key Metrics'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        return label + context.parsed.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                console.log("Mentoring Program Chart initialized");
+
+                // Scholarship Application Program Chart
+                const scholarshipCtx = document.getElementById('scholarshipProgramChart')?.getContext('2d');
+                if (!scholarshipCtx) {
+                    throw new Error("Scholarship Program Chart canvas not found");
+                }
+                console.log("Scholarship Program Data:", {
+                    totalApplications: modelData.ScholarshipApplicationKPIs?.TotalApplications || 0,
+                    phoneProvisionRate: (modelData.ScholarshipApplicationKPIs?.PhoneNumberProvisionRate * 100) || 0,
+                    averageGPA: modelData.ScholarshipApplicationKPIs?.AverageGPA || 0
+                });
+                new Chart(scholarshipCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Total Applications', 'Phone Provision Rate (%)', 'Average GPA'],
+                        datasets: [{
+                            label: 'Scholarship Program Metrics',
+                            data: [
+                                modelData.ScholarshipApplicationKPIs?.TotalApplications || 0,
+                                (modelData.ScholarshipApplicationKPIs?.PhoneNumberProvisionRate * 100) || 0,
+                                modelData.ScholarshipApplicationKPIs?.AverageGPA || 0
+                            ],
+                            backgroundColor: ['#17a2b8', '#4bc0c8', '#89d8e0'],
+                            borderColor: ['#117a8b', '#2f9aa3', '#5cb8c1'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Key Metrics'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.dataIndex === 1) {
+                                            return label + context.parsed.toFixed(2) + '%';
+                                        }
+                                        return label + context.parsed.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                console.log("Scholarship Program Chart initialized");
+
+            } catch (error) {
+                console.error("Error initializing charts:", error);
+                document.getElementById('googleChartError').textContent = "Failed to load chart: " + error.message;
+                document.getElementById('mentoringChartError').textContent = "Failed to load chart: " + error.message;
+                document.getElementById('scholarshipChartError').textContent = "Failed to load chart: " + error.message;
+            }
         });
 
         // Toggle comment expand/collapse
@@ -765,7 +993,6 @@
             const isExpanded = element.textContent === '[−]';
 
             if (isExpanded) {
-                // Collapse: Show truncated text
                 if (fullComment.length > 20) {
                     commentText.textContent = fullComment.substring(0, 20) + '...';
                 } else {
@@ -774,7 +1001,6 @@
                 element.textContent = '[+]';
                 console.log("Collapsed comment:", commentText.textContent);
             } else {
-                // Expand: Show full text
                 commentText.textContent = fullComment;
                 element.textContent = '[−]';
                 console.log("Expanded comment:", commentText.textContent);
@@ -787,7 +1013,6 @@
                 let csvContent = "data:text/csv;charset=utf-8,";
                 csvContent += "Category,Metric,Value\n";
 
-                // Google Certification Program
                 const googleKPIs = modelData.GoogleCertificationKPIs || {};
                 csvContent += "Google Certification Program,Total Participants," + (googleKPIs.TotalParticipants || 0) + "\n";
                 csvContent += "Google Certification Program,Completed Certifications," + (googleKPIs.CompletedCertifications || 0) + "\n";
@@ -812,7 +1037,6 @@
                     });
                 }
 
-                // Mentoring Program
                 const mentoringKPIs = modelData.MentoringProgramKPIs || {};
                 csvContent += "Mentoring Program,Total Sessions," + (mentoringKPIs.TotalMentoringSessions || 0) + "\n";
                 csvContent += "Mentoring Program,Unique Mentees," + (mentoringKPIs.UniqueMentees || 0) + "\n";
@@ -831,7 +1055,6 @@
                     }
                 }
 
-                // Scholarship Application Program
                 const scholarshipKPIs = modelData.ScholarshipApplicationKPIs || {};
                 csvContent += "Scholarship Application Program,Total Applications," + (scholarshipKPIs.TotalApplications || 0) + "\n";
                 csvContent += "Scholarship Application Program,Phone Provision Rate," + ((scholarshipKPIs.PhoneNumberProvisionRate * 100) || 0).toFixed(2) + "%\n";
@@ -874,7 +1097,6 @@
                 doc.setFontSize(12);
                 let y = 20;
 
-                // Google Certification Program
                 const googleKPIs = modelData.GoogleCertificationKPIs || {};
                 doc.text("Google Certification Program", 10, y); y += 10;
                 doc.text(`Total Participants: ${googleKPIs.TotalParticipants || 0}`, 10, y); y += 7;
@@ -901,7 +1123,6 @@
                 }
                 y += 3;
 
-                // Mentoring Program
                 const mentoringKPIs = modelData.MentoringProgramKPIs || {};
                 doc.text("Mentoring Program", 10, y); y += 10;
                 doc.text(`Total Sessions: ${mentoringKPIs.TotalMentoringSessions || 0}`, 10, y); y += 7;
@@ -922,7 +1143,6 @@
                 }
                 y += 3;
 
-                // Scholarship Application Program
                 const scholarshipKPIs = modelData.ScholarshipApplicationKPIs || {};
                 doc.text("Scholarship Application Program", 10, y); y += 10;
                 doc.text(`Total Applications: ${scholarshipKPIs.TotalApplications || 0}`, 10, y); y += 7;

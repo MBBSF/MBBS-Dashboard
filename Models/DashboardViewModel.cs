@@ -123,7 +123,8 @@ namespace MBBS.Dashboard.web.Models
     {
         public int TotalMentoringSessions { get; set; }
         public Dictionary<string, int> ContactMethodDistribution { get; set; }
-        public List<string> TopMentors { get; set; }
+        public List<(string Mentor, int Count)> TopMentorsWithCounts { get; set; } // Updated to store name and count
+        public List<string> TopMentors { get; set; } // Keep for compatibility
         public int UniqueMentees { get; set; }
         public double AverageSessionsPerMentee { get; set; }
         public Dictionary<string, int> ContactMethodPreference { get; set; }
@@ -144,5 +145,6 @@ namespace MBBS.Dashboard.web.Models
         public string Action { get; set; }
         public DateTime Timestamp { get; set; }
         public string Details { get; set; }
+        public int AccountId { get; internal set; }
     }
 }
