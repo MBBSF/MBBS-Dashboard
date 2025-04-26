@@ -102,10 +102,7 @@ This project was developed as a capstone and is not actively maintained. However
 
 ## Team
 - UNF Digital Talons (Senior Capstone Team, University of North Florida)
-- Contributors: [Your Name] (Front-End, Export Functionality, Azure Integration), [Other Team Members]
 
-## License
-This project is licensed under the [MIT License](LICENSE).
 
 ## Acknowledgments
 - Marie Barney Boston Scholarship Foundation for their collaboration and mission-driven work.

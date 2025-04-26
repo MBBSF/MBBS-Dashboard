@@ -78,6 +78,14 @@ namespace MBBS.Dashboard.web.Controllers
                 }
                 ActiveAccount.Password = model.NewPassword; // Assuming NewPassword is provided.
                 _accountRepository.SaveAccount(ActiveAccount);
+                // Log the password change action
+                _activityLogRepository.AddLog(new ActivityLog
+                {
+                    AccountId = ActiveAccount.Id,
+                    Action = "Password Changed",
+                    Timestamp = DateTime.UtcNow,
+                    Details = $"User {ActiveAccount.Username} changed their password"
+                });
                 return View("PasswordChangeSuccessful");
             }
             return View(model);
@@ -122,6 +130,14 @@ namespace MBBS.Dashboard.web.Controllers
                 ActiveAccount.Email = model.Email;
 
                 _accountRepository.SaveAccount(ActiveAccount);
+                // Log the account edit action
+                _activityLogRepository.AddLog(new ActivityLog
+                {
+                    AccountId = ActiveAccount.Id,
+                    Action = "Account Details Updated",
+                    Timestamp = DateTime.UtcNow,
+                    Details = $"User {ActiveAccount.Username} updated their account details"
+                });
                 TempData["SuccessMessage"] = "Account updated successfully!";
                 return RedirectToAction("AccountDetails");
             }
@@ -183,6 +199,14 @@ namespace MBBS.Dashboard.web.Controllers
 
             // Save the plain-text password directly.
             _accountRepository.SaveAccount(acc);
+            // Log the account creation action
+            _activityLogRepository.AddLog(new ActivityLog
+            {
+                AccountId = acc.Id,
+                Action = "Account Created",
+                Timestamp = DateTime.UtcNow,
+                Details = $"Admin created new account for user {acc.Username}"
+            });
 
             return RedirectToAction("AccountList");
         }
@@ -213,6 +237,14 @@ namespace MBBS.Dashboard.web.Controllers
             if (ModelState.IsValid)
             {
                 _accountRepository.SaveAccount(acc);
+                // Log the admin account edit action
+                _activityLogRepository.AddLog(new ActivityLog
+                {
+                    AccountId = acc.Id,
+                    Action = "Account Edited by Admin",
+                    Timestamp = DateTime.UtcNow,
+                    Details = $"Admin edited account for user {acc.Username}"
+                });
                 return RedirectToAction("AccountList");
             }
             return View("AccountSettings", acc);
@@ -251,6 +283,14 @@ namespace MBBS.Dashboard.web.Controllers
 
             account.IsActive = isActive;
             _accountRepository.SaveAccount(account);
+            // Log the account status change action
+            _activityLogRepository.AddLog(new ActivityLog
+            {
+                AccountId = account.Id,
+                Action = isActive ? "Account Activated" : "Account Deactivated",
+                Timestamp = DateTime.UtcNow,
+                Details = $"Admin set account status for user {account.Username} to {(isActive ? "active" : "inactive")}"
+            });
 
             return RedirectToAction("AccountList");
         }
@@ -260,10 +300,8 @@ namespace MBBS.Dashboard.web.Controllers
         // --------------------------
         public IActionResult SignIn(Account attempt)
         {
-            // Authenticate using plain-text comparisons.
             Account acc = _accountRepository.AuthenticateUser(attempt.Username, attempt.Password);
 
-            // Check for valid credentials and that the account is active.
             if (acc == null)
             {
                 ViewBag.ErrorMessage = "Invalid login credentials.";
@@ -275,11 +313,31 @@ namespace MBBS.Dashboard.web.Controllers
                 return View("LogInPage");
             }
             ActiveAccount = acc;
+            _activityLogRepository.AddLog(new ActivityLog
+            {
+                AccountId = acc.Id,
+                Action = "Signed In",
+                Timestamp = DateTime.UtcNow,
+                Details = $"User {acc.Username} signed in successfully"
+            });
             return RedirectToAction("Index", "Home");
         }
 
+
+
         public IActionResult LogOut()
         {
+            // Log the logout action before clearing ActiveAccount
+            if (ActiveAccount != null)
+            {
+                _activityLogRepository.AddLog(new ActivityLog
+                {
+                    AccountId = ActiveAccount.Id,
+                    Action = "Logged Out",
+                    Timestamp = DateTime.UtcNow,
+                    Details = $"User {ActiveAccount.Username} logged out"
+                });
+            }
             ActiveAccount = null;
             return RedirectToAction("LogInPage");
         }
@@ -296,5 +354,6 @@ namespace MBBS.Dashboard.web.Controllers
         public int AccountId { get; set; }
         public string Action { get; set; }
         public DateTime Timestamp { get; set; }
+        public string Details { get; set; } // Add this property
     }
 }
