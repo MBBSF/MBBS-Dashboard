@@ -33,14 +33,7 @@ namespace MBBS.Dashboard.web.Models
             
             // Configure for SQL Server (LocalDB in development, Azure SQL in production)
             builder
-                .UseSqlServer(connectionString, sqlOptions =>
-                {
-                    // Enable connection resiliency for SQL Server
-                    sqlOptions.EnableRetryOnFailure(
-                        maxRetryCount: 5,
-                        maxRetryDelay: TimeSpan.FromSeconds(30),
-                        errorNumbersToAdd: null);
-                })
+                .UseSqlServer(connectionString)
                 .LogTo(Console.WriteLine, LogLevel.Warning);
 
             return new ApplicationDbContext(builder.Options);

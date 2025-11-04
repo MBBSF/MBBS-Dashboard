@@ -21,7 +21,14 @@ builder.Services.AddSession(options =>
 
 // ?? Configure database context ??
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
+    {
+        // Enable connection resiliency for SQL Server with automatic retries on transient failures
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
+    })
 );
 
 // ?? Dependency injection ??
