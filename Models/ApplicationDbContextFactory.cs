@@ -18,8 +18,8 @@ namespace MBBS.Dashboard.web.Models
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+                .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: false)
                 .AddEnvironmentVariables()
                 .Build();
 
