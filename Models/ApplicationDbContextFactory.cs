@@ -15,7 +15,7 @@ namespace MBBS.Dashboard.web.Models
             var builder = new DbContextOptionsBuilder<ApplicationDbContext>();
 
             // Build configuration to read from appsettings.json
-            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -31,10 +31,11 @@ namespace MBBS.Dashboard.web.Models
                 throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             }
             
+            // Configure for SQL Server (LocalDB in development, Azure SQL in production)
             builder
                 .UseSqlServer(connectionString, sqlOptions =>
                 {
-                    // Enable connection resiliency for Azure SQL
+                    // Enable connection resiliency for SQL Server
                     sqlOptions.EnableRetryOnFailure(
                         maxRetryCount: 5,
                         maxRetryDelay: TimeSpan.FromSeconds(30),
