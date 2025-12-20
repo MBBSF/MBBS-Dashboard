@@ -1,20 +1,30 @@
 #!/usr/bin/env bash
 set -e
 
-echo "Hardening SSH permissions..."
+echo "Setting up Git configuration..."
 
-if [ -d "$HOME/.ssh" ]; then
+# Configure Git to use credential helper for HTTPS authentication
+git config --global credential.helper 'store --file=/tmp/git-credentials'
+git config --global init.defaultBranch main
+
+# Check if we have SSH keys (optional for SSH users)
+if [ -d "$HOME/.ssh" ] && [ "$(ls -A $HOME/.ssh)" ]; then
+  echo "SSH keys found - configuring SSH permissions..."
   sudo chown -R vscode:vscode "$HOME/.ssh"
   chmod 700 "$HOME/.ssh"
   chmod 600 "$HOME/.ssh"/id_* 2>/dev/null || true
   chmod 644 "$HOME/.ssh"/id_*.pub 2>/dev/null || true
+  echo "SSH configuration complete."
 else
+  echo "No SSH keys found - developers can use HTTPS with personal access tokens."
   mkdir -p "$HOME/.ssh"
   sudo chown vscode:vscode "$HOME/.ssh"
   chmod 700 "$HOME/.ssh"
 fi
 
-echo "SSH permission hardening complete."
+echo "Git configuration complete. Developers can use either:"
+echo "  • HTTPS: https://github.com/MBBSF/MBBS-Dashboard.git (use personal access token)"
+echo "  • SSH: git@github.com:MBBSF/MBBS-Dashboard.git (requires SSH keys)"
 
 echo "Verifying .NET 8 SDK installation..."
 DOTNET_VERSION=$(dotnet --version)

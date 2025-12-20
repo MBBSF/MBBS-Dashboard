@@ -19,7 +19,7 @@
     }
   },
 
-  // ---------- Persistent SSH Keys ----------
+  // ---------- Optional SSH Keys (for SSH users only) ----------
   "mounts": [
     "type=volume,source=devcontainer-ssh,target=/home/vscode/.ssh"
   ],
@@ -45,7 +45,9 @@
         "github.vscode-github-actions",
         "github.copilot",
         "ms-mssql.mssql",
-        "ms-azuretools.vscode-azurestorage"
+        "ms-azuretools.vscode-azurestorage",
+        "eamodio.gitlens",
+        "github.vscode-pull-request-github"
       ]
     }
   },

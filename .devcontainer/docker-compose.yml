@@ -7,6 +7,7 @@ services:
       dockerfile: .devcontainer/Dockerfile
     volumes:
       - ..:/workspace:cached
+      # Optional SSH volume (only used if SSH keys are available)
       - devcontainer-ssh:/home/vscode/.ssh
     command: sleep infinity
     depends_on:
