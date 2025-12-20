@@ -11,6 +11,11 @@
     <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
 }
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
 <h4>Account</h4>
 <hr />
 <div class="row">
@@ -29,7 +34,7 @@
             </div>
         </form>
 
-        <a class="btn btn-primary text-white btn-sm" asp-controller="Account" asp-action="AccountCreation" style="margin-top: 20px;">Account Registration</a>
+        <a class="btn btn-primary text-white btn-sm" asp-controller="Account" asp-action="Register" style="margin-top: 20px;">Create New Account</a>
     </div>
 </div>
 
