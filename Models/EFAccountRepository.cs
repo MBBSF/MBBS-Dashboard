@@ -27,7 +27,7 @@ namespace MBBS.Dashboard.web.Models
                 {
                     dbEntry.LegalName = account.LegalName;
                     dbEntry.Email = account.Email;
-                    // Save the plain-text password.
+                    // Update the hashed password.
                     dbEntry.Password = account.Password;
                 }
             }
@@ -36,7 +36,8 @@ namespace MBBS.Dashboard.web.Models
 
         public Account AuthenticateUser(string username, string password)
         {
-            // Compare the plain-text password directly.
+            // NOTE: This method is deprecated - use password hashing in the controller instead
+            // Compare the plain-text password directly (legacy method).
             return _context.Accounts.FirstOrDefault(a => a.Username == username && a.Password == password);
         }
     }

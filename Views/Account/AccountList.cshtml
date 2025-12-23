@@ -10,7 +10,9 @@
     <thead>
         <tr>
             <th>@Html.DisplayNameFor(model => model.First().LegalName)</th>
+            <th>@Html.DisplayNameFor(model => model.First().Username)</th>
             <th>@Html.DisplayNameFor(model => model.First().Email)</th>
+            <th>@Html.DisplayNameFor(model => model.First().UserRole)</th>
             <th>Actions</th>
             <th>Account Status</th>
         </tr>
@@ -18,9 +20,15 @@
     <tbody>
         @foreach (var item in Model)
         {
-            <tr>
+            <tr @(item.IsActive ? "" : "class=\"table-warning\"")>
                 <td>@Html.DisplayFor(modelItem => item.LegalName)</td>
+                <td>@Html.DisplayFor(modelItem => item.Username)</td>
                 <td>@Html.DisplayFor(modelItem => item.Email)</td>
+                <td>
+                    <span class="badge @(item.UserRole == "Admin" ? "bg-danger" : "bg-primary")">
+                        @Html.DisplayFor(modelItem => item.UserRole)
+                    </span>
+                </td>
                 <td>
                     <a asp-action="AccountSettings" asp-route-id="@item.Id">Edit</a> |
                     <a asp-action="Details" asp-route-id="@item.Id">Details</a>
@@ -31,10 +39,25 @@
                     <form asp-action="SetAccountStatus" method="post" style="display:inline;">
                         <input type="hidden" name="id" value="@item.Id" />
                         <input type="hidden" name="isActive" value="@(item.IsActive ? "false" : "true")" />
-                        <button type="submit" class="btn btn-link">
-                            @(item.IsActive ? "Deactivate" : "Activate")
+                        <button type="submit" class="btn @(item.IsActive ? "btn-warning" : "btn-success")">
+                            @if (item.IsActive)
+                            {
+                                @:Deactivate
+                            }
+                            else
+                            {
+                                @:🔓 Approve & Activate
+                            }
                         </button>
                     </form>
+                    @if (!item.IsActive)
+                    {
+                        <small class="text-warning d-block">⏳ Pending Approval</small>
+                    }
+                    else
+                    {
+                        <small class="text-success d-block">✅ Active</small>
+                    }
                 </td>
             </tr>
         }

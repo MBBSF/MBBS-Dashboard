@@ -1,0 +1,58 @@
+{
+  "name": "Framework Examples",
+
+  // ⭐ Use docker-compose for multi-container setup
+  "dockerComposeFile": "docker-compose.yml",
+
+  // ⭐ Name of the main development container (from docker-compose.yml)
+  "service": "devcontainer",
+
+  // Automatically set workspace to the mounted folder in DevContainer
+  "workspaceFolder": "/workspace",
+
+  // ---------- Dev Container Features (primary tools) ----------
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": "latest",
+    "ghcr.io/devcontainers/features/python:1": "latest",
+    "ghcr.io/devcontainers/features/dotnet:2": {
+      "version": "8.0"
+    }
+  },
+
+  // ---------- Optional SSH Keys (for SSH users only) ----------
+  "mounts": [
+    "type=volume,source=devcontainer-ssh,target=/home/vscode/.ssh"
+  ],
+
+  // ---------- Post-create script ----------
+  "postCreateCommand": "bash .devcontainer/scripts/post-create.sh",
+
+  // Default user inside container
+  "remoteUser": "vscode",
+
+  // ---------- Editor customizations ----------
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.eol": "\n"
+      },
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-vscode.vscode-typescript-next",
+        "github.vscode-github-actions",
+        "github.copilot",
+        "ms-mssql.mssql",
+        "ms-azuretools.vscode-azurestorage",
+        "eamodio.gitlens",
+        "github.vscode-pull-request-github"
+      ]
+    }
+  },
+
+  // ---------- Codespaces + WSL Compatibility ----------
+  "updateRemoteUserUID": false,
+  "overrideCommand": false
+}
